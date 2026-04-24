@@ -94,3 +94,20 @@ button { background: var(--accent); color: white; border: none; padding: 10px 20
     font-size: 11px;
     color: #86868b;
 }
+/* Делаем область текста в профиле визуально кликабельной */
+.info-side {
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: 15px;
+    transition: background 0.2s;
+}
+
+.info-side:hover {
+    background: rgba(0, 113, 227, 0.05); /* Легкая синяя подсветка при наведении */
+}
+
+/* Дополнительная анимация для поиска, чтобы он не перекрывал всё */
+.search-dropdown {
+    border: 1px solid rgba(0,0,0,0.1);
+    backdrop-filter: blur(10px);
+}

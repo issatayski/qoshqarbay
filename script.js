@@ -1,8 +1,9 @@
-// Замените на вашу ссылку CSV
+// 1. Ссылка на вашу таблицу
 const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSLsYHGO0lvQdxVywXS-F7io9Vw2bhpADxTI4nfuf0PdoZh4hVwKPKS0iKTmKycX2WsldvuPur2e58O/pub?output=csv";
 
 let globalData = [];
 let simulation;
+let svg, g; // Переменные для доступа к графике из любой функции
 
 // Загрузка данных
 d3.csv(SHEET_URL).then(rawData => {
@@ -22,19 +23,17 @@ function initGraph(data) {
     const width = window.innerWidth;
     const height = window.innerHeight;
 
-    // Создание связей (только если отец существует в базе)
     const links = data
         .filter(d => d.fatherId && data.find(p => p.id === d.fatherId))
         .map(d => ({ source: d.fatherId, target: d.id }));
 
-    const svg = d3.select("#treeCanvas")
+    svg = d3.select("#treeCanvas")
         .attr("width", width)
         .attr("height", height)
         .call(d3.zoom().scaleExtent([0.1, 3]).on("zoom", (e) => g.attr("transform", e.transform)));
 
-    const g = svg.append("g");
+    g = svg.append("g");
 
-    // Физика графа
     simulation = d3.forceSimulation(data)
         .force("link", d3.forceLink(links).id(d => d.id).distance(120))
         .force("charge", d3.forceManyBody().strength(-1500))
@@ -56,67 +55,54 @@ function initGraph(data) {
         node.attr("transform", d => `translate(${d.x},${d.y})`);
     });
 
-    // Поиск
-    const searchInput = document.getElementById('memberSearch');
-const searchResults = document.getElementById('searchResults');
-
-// Функция живого поиска при вводе текста
-searchInput.oninput = function() {
-    const val = this.value.toLowerCase();
-    searchResults.innerHTML = ""; // Очищаем старые результаты
-    
-    if (val.length < 2) {
-        searchResults.classList.remove('active');
-        return;
-    }
-
-    // Ищем всех похожих людей
-    const matches = globalData.filter(p => p.name.toLowerCase().includes(val));
-
-    if (matches.length > 0) {
-        searchResults.classList.add('active');
-        matches.forEach(person => {
-            const div = document.createElement('div');
-            div.className = 'search-item';
-            
-            // Находим отца для уточнения (чтобы отличить тезок)
-            const father = globalData.find(f => f.id === person.fatherId);
-            const fatherNote = father ? `${father.name} ұлы` : "Основатель";
-
-            div.innerHTML = `
-                <strong>${person.name}</strong>
-                <span class="sub-name">${fatherNote} | род: ${person.birth}</span>
-            `;
-
-            // При клике на результат — открываем профиль и очищаем поиск
-            div.onclick = () => {
-                showProfile(person);
-                searchResults.classList.remove('active');
-                searchInput.value = person.name;
-            };
-            searchResults.appendChild(div);
-        });
-    } else {
-        searchResults.classList.remove('active');
-    }
-};
-
-// Скрывать поиск при клике вне его
-document.addEventListener('click', (e) => {
-    if (!e.target.closest('.input-wrapper')) {
-        searchResults.classList.remove('active');
-    }
-});
-
-// Кнопка "Найти" просто берет первое совпадение
-document.getElementById('searchBtn').onclick = () => {
-    const val = searchInput.value.toLowerCase();
-    const found = globalData.find(p => p.name.toLowerCase().includes(val));
-    if (found) showProfile(found);
-};
+    setupSearch();
 }
 
-// РЕКУРСИЯ: Поиск всех отцов вверх
+// Вынес поиск в отдельную функцию, чтобы не путать с графикой
+function setupSearch() {
+    const searchInput = document.getElementById('memberSearch');
+    const searchResults = document.getElementById('searchResults');
+
+    searchInput.oninput = function() {
+        const val = this.value.toLowerCase();
+        searchResults.innerHTML = "";
+        if (val.length < 2) {
+            searchResults.classList.remove('active');
+            return;
+        }
+
+        const matches = globalData.filter(p => p.name.toLowerCase().includes(val));
+        if (matches.length > 0) {
+            searchResults.classList.add('active');
+            matches.forEach(person => {
+                const div = document.createElement('div');
+                div.className = 'search-item';
+                const father = globalData.find(f => f.id === person.fatherId);
+                const fatherNote = father ? `${father.name.split(' ')[0]}ұлы` : "Основатель";
+                div.innerHTML = `<strong>${person.name}</strong><span class="sub-name">${fatherNote} | род: ${person.birth}</span>`;
+                div.onclick = () => {
+                    showProfile(person);
+                    searchResults.classList.remove('active');
+                    searchInput.value = person.name;
+                };
+                searchResults.appendChild(div);
+            });
+        } else {
+            searchResults.classList.remove('active');
+        }
+    };
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.input-wrapper')) searchResults.classList.remove('active');
+    });
+
+    document.getElementById('searchBtn').onclick = () => {
+        const val = searchInput.value.toLowerCase();
+        const found = globalData.find(p => p.name.toLowerCase().includes(val));
+        if (found) showProfile(found);
+    };
+}
+
 function getAncestors(person, list = []) {
     if (!person.fatherId) return list;
     const father = globalData.find(p => p.id === person.fatherId);
@@ -127,11 +113,10 @@ function getAncestors(person, list = []) {
     return list;
 }
 
-// ОТКРЫТИЕ ПРОФИЛЯ
 function showProfile(person) {
     const modal = document.getElementById('profileModal');
     
-    // Формируем Имя (Отец + ұлы + Имя)
+    // Формирование имени "ұлы"
     const father = globalData.find(p => p.id === person.fatherId);
     const fullNameElement = document.getElementById('p-full-name');
     if (father) {
@@ -140,6 +125,23 @@ function showProfile(person) {
     } else {
         fullNameElement.innerText = person.name;
     }
+
+    // ЛОГИКА ПЕРЕХОДА К КАРТЕ ПРИ КЛИКЕ НА ШАПКУ
+    const infoSide = document.querySelector('.info-side');
+    infoSide.onclick = () => {
+        modal.classList.remove('active'); // Закрыть профиль
+        
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        
+        // Плавный подлет камеры к человеку
+        svg.transition().duration(1000).call(
+            d3.zoom().transform, 
+            d3.zoomIdentity.translate(width/2 - person.x * 1.5, height/2 - person.y * 1.5).scale(1.5)
+        );
+
+        highlightNode(person.id); // Подсветить зеленым
+    };
 
     // Даты и Телефон
     document.getElementById('p-birth').innerText = `род. ${person.birth}`;
@@ -169,7 +171,7 @@ function showProfile(person) {
         img.style.display = 'none'; placeholder.style.display = 'block';
     }
 
-    // Рендер Предков (Шежіре вверх)
+    // Рендер Предков
     const ancestors = getAncestors(person).reverse();
     const ancCont = document.getElementById('p-ancestors');
     ancCont.innerHTML = ancestors.length ? "" : "<p style='color:#86868b'>Основатель рода</p>";
@@ -181,27 +183,38 @@ function showProfile(person) {
         ancCont.appendChild(div);
     });
 
-    // Находим детей и сортируем: сперва меньший ID, затем больший
-const children = globalData
-    .filter(p => p.fatherId === person.id)
-    .sort((a, b) => a.id - b.id); // Порядок: 45, 100, 609
+    // Рендер Потомков (Сортировка по возрастанию ID)
+    const children = globalData
+        .filter(p => p.fatherId === person.id)
+        .sort((a, b) => a.id - b.id);
 
-const descCont = document.getElementById('p-descendants');
-descCont.innerHTML = children.length ? "" : "<p style='color:#86868b'>Нет данных о сыновьях</p>";
-
-children.forEach(child => {
-    const div = document.createElement('div');
-    div.className = 'lineage-item';
-    // Добавим ID в скобках для проверки (опционально)
-    div.innerText = `↳ ${child.name}`; 
-    div.onclick = (e) => { e.stopPropagation(); showProfile(child); };
-    descCont.appendChild(div);
-});
+    const descCont = document.getElementById('p-descendants');
+    descCont.innerHTML = children.length ? "" : "<p style='color:#86868b'>Нет данных о сыновьях</p>";
+    children.forEach(child => {
+        const div = document.createElement('div');
+        div.className = 'lineage-item';
+        div.innerText = `↳ ${child.name}`; 
+        div.onclick = (e) => { e.stopPropagation(); showProfile(child); };
+        descCont.appendChild(div);
+    });
 
     modal.classList.add('active');
 }
 
-// Закрытие и Drag
+function highlightNode(nodeId) {
+    d3.selectAll(".node circle").transition().attr("stroke", "#0071e3").attr("stroke-width", 2);
+    d3.selectAll(".node text").transition().style("fill", "#333").style("font-weight", "500");
+
+    const targetNode = d3.selectAll(".node").filter(d => d.id === nodeId);
+    targetNode.select("circle").transition().duration(500).attr("stroke", "#28a745").attr("stroke-width", 8);
+    targetNode.select("text").transition().duration(500).style("fill", "#28a745").style("font-weight", "bold");
+    
+    setTimeout(() => {
+        targetNode.select("circle").transition().duration(1000).attr("stroke", "#0071e3").attr("stroke-width", 2);
+        targetNode.select("text").transition().duration(1000).style("fill", "#333").style("font-weight", "500");
+    }, 3000);
+}
+
 document.querySelector('.close-modal').onclick = () => document.getElementById('profileModal').classList.remove('active');
 function dragStart(e) { if (!e.active) simulation.alphaTarget(0.3).restart(); e.subject.fx = e.subject.x; e.subject.fy = e.subject.y; }
 function dragging(e) { e.subject.fx = e.x; e.subject.fy = e.y; }
