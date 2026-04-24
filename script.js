@@ -171,10 +171,10 @@ function showProfile(person) {
     };
 
     // Даты и Телефон
-    document.getElementById('p-birth').innerText = `род. ${person.birth}`;
+    document.getElementById('p-birth').innerText = `${person.birth} туылды`;
     const deathElem = document.getElementById('p-death');
     if (person.death) {
-        deathElem.innerText = `<br> — ум. ${person.death}`;
+        deathElem.innerText = ` — ${person.death} қайтты`;
         deathElem.style.display = 'inline';
     } else {
         deathElem.style.display = 'none';
