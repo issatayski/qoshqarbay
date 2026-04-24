@@ -174,7 +174,7 @@ function showProfile(person) {
     document.getElementById('p-birth').innerText = `род. ${person.birth}`;
     const deathElem = document.getElementById('p-death');
     if (person.death) {
-        deathElem.innerText = ` — ум. ${person.death}`;
+        deathElem.innerText = `<br> — ум. ${person.death}`;
         deathElem.style.display = 'inline';
     } else {
         deathElem.style.display = 'none';
