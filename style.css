@@ -1,43 +1,58 @@
 :root {
-    --apple-bg: #fbfbfd;
+    --apple-bg: #f5f5f7;
     --accent: #0071e3;
-    --glass: rgba(255, 255, 255, 0.8);
+    --glass: rgba(255, 255, 255, 0.85);
+    --text: #1d1d1f;
 }
 
-body { margin: 0; background: var(--apple-bg); font-family: -apple-system, sans-serif; overflow: hidden; }
+body { margin: 0; background: var(--apple-bg); font-family: -apple-system, BlinkMacSystemFont, sans-serif; color: var(--text); overflow: hidden; }
 
-/* Дизайн Хедера */
+/* Header */
 .glass-header {
-    position: fixed; top: 30px; left: 50%; transform: translateX(-50%);
-    z-index: 100; background: var(--glass);
-    backdrop-filter: blur(20px); padding: 8px 12px;
-    border-radius: 18px; border: 1px solid rgba(0,0,0,0.1);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+    z-index: 100; background: var(--glass); backdrop-filter: blur(20px);
+    padding: 10px 20px; border-radius: 20px; border: 1px solid rgba(0,0,0,0.1);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
 }
-
 .search-box { display: flex; gap: 10px; }
-input { border: none; background: rgba(0,0,0,0.05); padding: 10px 15px; border-radius: 12px; width: 200px; outline: none; }
-button.btn-primary { background: var(--accent); color: white; border: none; padding: 8px 20px; border-radius: 12px; cursor: pointer; }
+input { border: none; background: rgba(0,0,0,0.05); padding: 12px; border-radius: 12px; width: 250px; outline: none; font-size: 16px; }
+button { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 12px; cursor: pointer; font-weight: 600; }
 
-/* Модальное окно с Blur-фоном */
+/* Canvas Elements */
+.node circle { cursor: pointer; transition: 0.3s; }
+.node text { pointer-events: none; font-weight: 500; fill: #333; }
+.link { stroke: #d2d2d7; stroke-width: 1.5; opacity: 0.6; }
+
+/* Modal & Blur */
 .modal-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.3);
-    backdrop-filter: blur(10px); /* Тот самый блюр фона */
-    display: none; align-items: center; justify-content: center; z-index: 1000;
+    backdrop-filter: blur(15px); display: none; align-items: center; justify-content: center; z-index: 1000;
 }
 .modal-overlay.active { display: flex; }
-
 .modal-content {
-    width: 380px; background: white; border-radius: 28px; padding: 30px;
-    position: relative; box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    width: 90%; max-width: 400px; background: white; border-radius: 30px; 
+    padding: 40px 30px; position: relative; box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+    max-height: 80vh; overflow-y: auto;
 }
 
-.avatar-container { margin-bottom: 15px; }
-#p-photo { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid var(--accent); }
-.profile-avatar { width: 100px; height: 100px; background: #eee; border-radius: 50%; margin: 0 auto; }
+/* Profile Details */
+.avatar-wrapper { text-align: center; margin-bottom: 15px; }
+#p-photo { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 4px solid var(--accent); }
+.profile-avatar { width: 110px; height: 110px; background: #e5e5e7; border-radius: 50%; margin: 0 auto; }
 
-.info-row { display: flex; justify-content: space-between; margin: 10px 0; border-bottom: 1px solid #f0f0f0; padding-bottom: 5px; }
-.label { color: #86868b; font-size: 14px; }
-.value { font-weight: 500; color: #1d1d1f; }
+.dates-badges { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+.dates-badges span { padding: 4px 12px; border-radius: 20px; font-size: 13px; background: #f0f0f2; color: #555; }
 
-.close-modal { position: absolute; right: 20px; top: 20px; border: none; background: none; font-size: 24px; cursor: pointer; color: #86868b; }
+/* Lineage UI */
+.lineage-section { margin-top: 20px; text-align: left; }
+.lineage-section h4 { font-size: 14px; color: #86868b; text-transform: uppercase; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+.lineage-list { display: flex; flex-direction: column; gap: 8px; }
+.lineage-item { 
+    padding: 10px; background: #f9f9fb; border-radius: 12px; font-size: 15px; 
+    cursor: pointer; transition: 0.2s; border: 1px solid transparent;
+}
+.lineage-item:hover { border-color: var(--accent); background: #fff; }
+.lineage-item.ancestor::before { content: "↑ "; color: #ccc; }
+.lineage-item.descendant::before { content: "↳ "; color: #ccc; }
+
+.close-modal { position: absolute; top: 20px; right: 20px; border: none; background: none; font-size: 28px; cursor: pointer; color: #ccc; }

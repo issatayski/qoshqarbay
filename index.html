@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Genealogy Tree | Interactive Map</title>
+    <title>Шежіре | Генеалогическое древо</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
@@ -11,7 +11,7 @@
 
     <header class="glass-header">
         <div class="search-box">
-            <input type="text" id="memberSearch" placeholder="Введите имя..." autocomplete="off">
+            <input type="text" id="memberSearch" placeholder="Поиск по имени..." autocomplete="off">
             <button id="searchBtn" class="btn-primary">Найти</button>
         </div>
     </header>
@@ -23,25 +23,32 @@
     <div id="profileModal" class="modal-overlay">
         <div class="modal-content glass">
             <button class="close-modal">&times;</button>
+            
             <div class="profile-header">
-                <div class="avatar-container">
-                    <img id="p-photo" src="" alt="" style="display:none;">
+                <div class="avatar-wrapper">
+                    <img id="p-photo" src="" alt="">
                     <div id="p-avatar-placeholder" class="profile-avatar"></div>
                 </div>
                 <h2 id="p-name"></h2>
+                <div class="dates-badges">
+                    <span id="p-birth-badge"></span>
+                    <span id="p-death-badge" style="display:none;"></span>
+                </div>
             </div>
+
             <div class="profile-body">
-                <div class="info-row">
-                    <span class="label">Дата рождения:</span>
-                    <span id="p-birth" class="value"></span>
+                <div class="lineage-section">
+                    <h4>Линия предков (Аталар)</h4>
+                    <div id="p-ancestors" class="lineage-list"></div>
                 </div>
-                <div class="info-row" id="death-row" style="display:none;">
-                    <span class="label">Дата смерти:</span>
-                    <span id="p-death" class="value"></span>
+
+                <div class="current-info">
+                    <p><strong>Тел:</strong> <span id="p-contact"></span></p>
                 </div>
-                <div class="info-row">
-                    <span class="label">Контакты:</span>
-                    <span id="p-contact" class="value"></span>
+
+                <div class="lineage-section">
+                    <h4>Потомки (Ұрпақтар)</h4>
+                    <div id="p-descendants" class="lineage-list"></div>
                 </div>
             </div>
         </div>

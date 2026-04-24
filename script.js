@@ -1,95 +1,124 @@
-// Рыба данных (сюда же можно подключить d3.csv для Google Sheets)
-const familyData = [
-    { id: 1, name: "Иван Иванов", birth: "12.05.1970", death: null, photo: "https://i.pravatar.cc/150?u=1", phone: "+7 (777) 111", parents: [3], children: [] },
-    { id: 3, name: "Александр Иванов", birth: "01.01.1940", death: "15.03.2010", photo: "https://i.pravatar.cc/150?u=3", phone: "-", parents: [], children: [1] }
-];
+// Замените на вашу ссылку CSV
+const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS_H-pS_ID_ВАШ_ID/pub?output=csv";
 
-const width = window.innerWidth;
-const height = window.innerHeight;
+let globalData = [];
 
-const svg = d3.select("#treeCanvas")
-    .attr("width", width)
-    .attr("height", height)
-    .call(d3.zoom().scaleExtent([0.5, 3]).on("zoom", (event) => g.attr("transform", event.transform)));
-
-const g = svg.append("g");
-
-// Связи
-const links = [];
-familyData.forEach(p => p.children.forEach(cId => links.push({ source: p.id, target: cId })));
-
-const simulation = d3.forceSimulation(familyData)
-    .force("link", d3.forceLink(links).id(d => d.id).distance(180))
-    .force("charge", d3.forceManyBody().strength(-800))
-    .force("center", d3.forceCenter(width / 2, height / 2));
-
-const link = g.append("g").selectAll("line").data(links).enter().append("line")
-    .attr("stroke", "#d2d2d7").attr("stroke-width", 2);
-
-const node = g.append("g").selectAll(".node").data(familyData).enter().append("g")
-    .attr("class", "node")
-    .on("click", (e, d) => showProfile(d))
-    .call(d3.drag().on("start", dragStart).on("drag", dragging).on("end", dragEnd));
-
-node.append("circle").attr("r", 35).attr("fill", "white").attr("stroke", "#0071e3").attr("stroke-width", 2);
-node.append("text").attr("dy", 55).attr("text-anchor", "middle").text(d => d.name).style("font-size", "13px");
-
-simulation.on("tick", () => {
-    link.attr("x1", d => d.source.x).attr("y1", d => d.source.y).attr("x2", d => d.target.x).attr("y2", d => d.target.y);
-    node.attr("transform", d => `translate(${d.x},${d.y})`);
+// 1. Загрузка данных
+d3.csv(SHEET_URL).then(rawData => {
+    globalData = rawData.map(d => ({
+        id: Number(d.id),
+        name: d.name,
+        photo: d.photo || "",
+        birth: d.birth || "—",
+        death: d.death || null,
+        phone: d.phone || "—",
+        fatherId: d.father_id ? Number(d.father_id) : null
+    }));
+    initGraph(globalData);
 });
 
-// ЛОГИКА ПРОФИЛЯ
+function initGraph(data) {
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    const links = data.filter(d => d.fatherId).map(d => ({ source: d.fatherId, target: d.id }));
+
+    const svg = d3.select("#treeCanvas")
+        .attr("width", width)
+        .attr("height", height)
+        .call(d3.zoom().scaleExtent([0.2, 3]).on("zoom", (e) => g.attr("transform", e.transform)));
+
+    const g = svg.append("g");
+
+    const simulation = d3.forceSimulation(data)
+        .force("link", d3.forceLink(links).id(d => d.id).distance(150))
+        .force("charge", d3.forceManyBody().strength(-1200))
+        .force("center", d3.forceCenter(width / 2, height / 2));
+
+    const link = g.append("g").selectAll("line").data(links).enter().append("line").attr("class", "link");
+
+    const node = g.append("g").selectAll(".node").data(data).enter().append("g")
+        .attr("class", "node")
+        .on("click", (e, d) => showProfile(d))
+        .call(d3.drag().on("start", dragStart).on("drag", dragging).on("end", dragEnd));
+
+    node.append("circle").attr("r", 30).attr("fill", "white").attr("stroke", "#0071e3").attr("stroke-width", 2);
+    node.append("text").attr("dy", 50).attr("text-anchor", "middle").text(d => d.name).style("font-size", "12px");
+
+    simulation.on("tick", () => {
+        link.attr("x1", d => d.source.x).attr("y1", d => d.source.y).attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+        node.attr("transform", d => `translate(${d.x},${d.y})`);
+    });
+
+    document.getElementById('searchBtn').onclick = () => {
+        const val = document.getElementById('memberSearch').value.toLowerCase();
+        const found = data.find(p => p.name.toLowerCase().includes(val));
+        if (found) showProfile(found);
+    };
+}
+
+// 2. Логика построения цепочки (Шежіре)
+function getAncestors(person, list = []) {
+    const father = globalData.find(p => p.id === person.fatherId);
+    if (father) {
+        list.push(father);
+        return getAncestors(father, list);
+    }
+    return list;
+}
+
 function showProfile(person) {
     const modal = document.getElementById('profileModal');
     
-    // Имя и Даты
+    // Основное
     document.getElementById('p-name').innerText = person.name;
-    document.getElementById('p-birth').innerText = person.birth;
+    document.getElementById('p-birth-badge').innerText = `род. ${person.birth}`;
     document.getElementById('p-contact').innerText = person.phone;
 
-    // Логика даты смерти
-    const deathRow = document.getElementById('death-row');
+    // Смерть
+    const deathBadge = document.getElementById('p-death-badge');
     if (person.death) {
-        deathRow.style.display = 'flex';
-        document.getElementById('p-death').innerText = person.death;
+        deathBadge.innerText = `ум. ${person.death}`;
+        deathBadge.style.display = 'inline-block';
     } else {
-        deathRow.style.display = 'none';
+        deathBadge.style.display = 'none';
     }
 
-    // Фото (Аватар из таблицы)
+    // Фото
     const img = document.getElementById('p-photo');
     const placeholder = document.getElementById('p-avatar-placeholder');
-    if (person.photo && person.photo !== "") {
-        img.src = person.photo;
-        img.style.display = 'block';
-        placeholder.style.display = 'none';
-    } else {
-        img.style.display = 'none';
-        placeholder.style.display = 'block';
-    }
+    if (person.photo) { img.src = person.photo; img.style.display = 'block'; placeholder.style.display = 'none'; }
+    else { img.style.display = 'none'; placeholder.style.display = 'block'; }
+
+    // ЦЕПОЧКА ПРЕДКОВ (ВВЕРХ)
+    const ancestors = getAncestors(person).reverse(); // От прадеда к отцу
+    const ancContainer = document.getElementById('p-ancestors');
+    ancContainer.innerHTML = ancestors.length ? "" : "<p>Первый предок</p>";
+    ancestors.forEach(anc => {
+        const div = document.createElement('div');
+        div.className = 'lineage-item ancestor';
+        div.innerText = anc.name;
+        div.onclick = () => showProfile(anc);
+        ancContainer.appendChild(div);
+    });
+
+    // СПИСОК ДЕТЕЙ (ВНИЗ)
+    const children = globalData.filter(p => p.fatherId === person.id);
+    const descContainer = document.getElementById('p-descendants');
+    descContainer.innerHTML = children.length ? "" : "<p>Нет потомков по мужской линии</p>";
+    children.forEach(child => {
+        const div = document.createElement('div');
+        div.className = 'lineage-item descendant';
+        div.innerText = child.name;
+        div.onclick = () => showProfile(child);
+        descContainer.appendChild(div);
+    });
 
     modal.classList.add('active');
-    
-    // Центрирование камеры
-    svg.transition().duration(800).call(
-        d3.zoom().transform, 
-        d3.zoomIdentity.translate(width/2 - person.x, height/2 - person.y).scale(1.2)
-    );
 }
 
-// ЛОГИКА ПОИСКА ПО КНОПКЕ
-document.getElementById('searchBtn').onclick = function() {
-    const query = document.getElementById('memberSearch').value.toLowerCase();
-    const found = familyData.find(p => p.name.toLowerCase().includes(query));
-    if(found) showProfile(found);
-    else alert("Родственник не найден");
-};
-
-// Закрытие
+// UI Helpers
 document.querySelector('.close-modal').onclick = () => document.getElementById('profileModal').classList.remove('active');
-
-// Технические функции Drag
-function dragStart(event) { if (!event.active) simulation.alphaTarget(0.3).restart(); event.subject.fx = event.subject.x; event.subject.fy = event.subject.y; }
-function dragging(event) { event.subject.fx = event.x; event.subject.fy = event.y; }
-function dragEnd(event) { if (!event.active) simulation.alphaTarget(0); event.subject.fx = null; event.subject.fy = null; }
+function dragStart(e) { if (!e.active) simulation.alphaTarget(0.3).restart(); e.subject.fx = e.subject.x; e.subject.fy = e.subject.y; }
+function dragging(e) { e.subject.fx = e.x; e.subject.fy = e.y; }
+function dragEnd(e) { if (!e.active) simulation.alphaTarget(0); e.subject.fx = null; e.subject.fy = null; }
