@@ -34,6 +34,27 @@ function initGraph(data) {
 
     g = svg.append("g");
 
+// Создаем контейнер для определений (шаблонов фото)
+const defs = svg.append("defs");
+
+// Создаем шаблон для каждого человека, у которого есть фото
+data.forEach(person => {
+    if (person.photo) {
+        defs.append("pattern")
+            .attr("id", `avatar-${person.id}`) // Уникальный ID для привязки
+            .attr("width", 1)
+            .attr("height", 1)
+            .attr("patternContentUnits", "objectBoundingBox")
+            .append("image")
+            .attr("href", person.photo)
+            .attr("width", 1)
+            .attr("height", 1)
+            .attr("preserveAspectRatio", "xMidYMid slice");
+    }
+});
+
+
+    
     simulation = d3.forceSimulation(data)
         .force("link", d3.forceLink(links).id(d => d.id).distance(120))
         .force("charge", d3.forceManyBody().strength(-1500))
@@ -47,7 +68,13 @@ function initGraph(data) {
         .on("click", (e, d) => showProfile(d))
         .call(d3.drag().on("start", dragStart).on("drag", dragging).on("end", dragEnd));
 
-    node.append("circle").attr("r", 30).attr("fill", "#fff").attr("stroke", "#0071e3").attr("stroke-width", 2);
+node.append("circle")
+    .attr("r", 30)
+    .attr("fill", d => d.photo ? `url(#avatar-${d.id})` : "#fff") // Если есть фото — используем шаблон, если нет — белый цвет
+    .attr("stroke", "#0071e3")
+    .attr("stroke-width", 2);
+
+    
     node.append("text").attr("dy", 50).attr("text-anchor", "middle").text(d => d.name);
 
     simulation.on("tick", () => {
