@@ -1,0 +1,8 @@
+{
+  "people":[
+    {"id":1,"name":"Иван Иванов","phone":"+777777777","parent":null,"children":[2,3]},
+    {"id":2,"name":"Петр Иванов","phone":"+788888888","parent":1,"children":[]},
+    {"id":3,"name":"Анна Иванова","phone":"+799999999","parent":1,"children":[4]},
+    {"id":4,"name":"Максим Петров","phone":"+700000000","parent":3,"children":[]}
+  ]
+}
