@@ -1,113 +1,47 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Генеалогия</title>
-<script src="https://balkan.app/js/FamilyTree.js"></script>
-
-<style>
-body{
-  margin:0;
-  font-family:-apple-system, BlinkMacSystemFont, sans-serif;
-  background:#f5f5f7;
-}
-#tree{
-  width:100%;
-  height:100vh;
-}
-
-/* Glass modal */
-#modal{
-  position:fixed;
-  inset:0;
-  display:none;
-  align-items:center;
-  justify-content:center;
-  backdrop-filter: blur(20px);
-  background: rgba(0,0,0,0.3);
-}
-
-.card{
-  background: rgba(255,255,255,0.7);
-  backdrop-filter: blur(20px);
-  border-radius:20px;
-  padding:25px;
-  width:320px;
-  box-shadow:0 10px 40px rgba(0,0,0,0.2);
-  animation:fadeIn 0.3s ease;
-}
-
-@keyframes fadeIn{
-  from{transform:scale(0.9);opacity:0;}
-  to{transform:scale(1);opacity:1;}
-}
-
-.child{
-  padding:8px;
-  cursor:pointer;
-  border-radius:10px;
-}
-.child:hover{
-  background:#eee;
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Genealogy Graph | Interactive Map</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
-
 <body>
 
-<div id="tree"></div>
+    <header class="glass-header">
+        <div class="search-container">
+            <input type="text" id="memberSearch" placeholder="Поиск родственников..." autocomplete="off">
+            <div id="searchResults" class="search-results-dropdown"></div>
+        </div>
+        <button id="resetView" class="btn-secondary">В центр</button>
+    </header>
 
-<div id="modal">
-  <div class="card" id="modalContent"></div>
-</div>
+    <div id="canvas-container">
+        <svg id="treeCanvas"></svg>
+    </div>
 
-<script>
-let PEOPLE = [];
+    <div id="profileModal" class="modal-overlay">
+        <div class="modal-content glass">
+            <button class="close-modal">&times;</button>
+            <div class="profile-header">
+                <div class="profile-avatar" id="p-avatar"></div>
+                <h2 id="p-name">Имя Фамилия</h2>
+                <p id="p-dates" class="secondary-text">1900 — 1980</p>
+            </div>
+            <div class="profile-body">
+                <div class="info-section">
+                    <h4>Контакты</h4>
+                    <p id="p-contact">-</p>
+                </div>
+                <div class="info-section">
+                    <h4>Семья</h4>
+                    <div id="p-relatives" class="rel-tags"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-fetch('data.json')
-.then(r=>r.json())
-.then(data=>{
-  PEOPLE = data.people;
-
-  const nodes = PEOPLE.map(p=>({
-    id:p.id,
-    name:p.name,
-    pid:p.parent || null
-  }));
-
-  const tree = new FamilyTree(document.getElementById("tree"), {
-    nodes:nodes,
-    nodeBinding:{ field_0:"name" }
-  });
-
-  tree.on('click',(s,a)=>openProfile(a.node.id));
-});
-
-function openProfile(id){
-  const p = PEOPLE.find(x=>x.id==id);
-
-  const children = p.children.map(cid=>{
-    const c = PEOPLE.find(x=>x.id==cid);
-    return `<div class="child" onclick="openProfile(${c.id})">${c.name}</div>`;
-  }).join('');
-
-  document.getElementById('modalContent').innerHTML = `
-    <h2>${p.name}</h2>
-    <p>📞 ${p.phone}</p>
-    <h4>Дети:</h4>
-    ${children || '<p>Нет</p>'}
-    <br>
-    <button onclick="closeModal()">Закрыть</button>
-  `;
-
-  modal.style.display='flex';
-}
-
-function closeModal(){
-  modal.style.display='none';
-}
-</script>
-
+    <script src="script.js"></script>
 </body>
 </html>
