@@ -174,7 +174,7 @@ function showProfile(person) {
     document.getElementById('p-birth').innerText = `${person.birth} туылды`;
     const deathElem = document.getElementById('p-death');
     if (person.death) {
-        deathElem.innerText = ` — ${person.death} қайтты`;
+        deathElem.innerText = ` ${person.death} қайтты`;
         deathElem.style.display = 'inline';
     } else {
         deathElem.style.display = 'none';
@@ -201,7 +201,7 @@ function showProfile(person) {
     // Рендер Предков
     const ancestors = getAncestors(person).reverse();
     const ancCont = document.getElementById('p-ancestors');
-    ancCont.innerHTML = ancestors.length ? "" : "<p style='color:#86868b'>Основатель рода</p>";
+    ancCont.innerHTML = ancestors.length ? "" : "<p style='color:#86868b'>Ең үлкен атамыз</p>";
     ancestors.forEach(anc => {
         const div = document.createElement('div');
         div.className = 'lineage-item';
@@ -216,7 +216,7 @@ function showProfile(person) {
         .sort((a, b) => a.id - b.id);
 
     const descCont = document.getElementById('p-descendants');
-    descCont.innerHTML = children.length ? "" : "<p style='color:#86868b'>Нет данных о сыновьях</p>";
+    descCont.innerHTML = children.length ? "" : "<p style='color:#86868b'>Ұлдары жайлы ақпарат жоқ</p>";
     children.forEach(child => {
         const div = document.createElement('div');
         div.className = 'lineage-item';
