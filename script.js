@@ -181,17 +181,21 @@ function showProfile(person) {
         ancCont.appendChild(div);
     });
 
-    // Рендер Потомков (Вниз)
-    const children = globalData.filter(p => p.fatherId === person.id);
-    const descCont = document.getElementById('p-descendants');
-    descCont.innerHTML = children.length ? "" : "<p style='color:#86868b'>Нет данных о сыновьях</p>";
-    children.forEach(child => {
-        const div = document.createElement('div');
-        div.className = 'lineage-item';
-        div.innerText = `↳ ${child.name}`;
-        div.onclick = (e) => { e.stopPropagation(); showProfile(child); };
-        descCont.appendChild(div);
-    });
+    // Фильтруем и сразу сортируем по убыванию ID (от новых к старым)
+const children = globalData
+    .filter(p => p.fatherId === person.id)
+    .sort((a, b) => b.id - a.id); 
+
+const descCont = document.getElementById('p-descendants');
+descCont.innerHTML = children.length ? "" : "<p style='color:#86868b'>Нет данных о сыновьях</p>";
+
+children.forEach(child => {
+    const div = document.createElement('div');
+    div.className = 'lineage-item';
+    div.innerText = `↳ ${child.name}`;
+    div.onclick = (e) => { e.stopPropagation(); showProfile(child); };
+    descCont.appendChild(div);
+});
 
     modal.classList.add('active');
 }
