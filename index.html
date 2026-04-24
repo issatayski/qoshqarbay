@@ -3,18 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Genealogy Graph | Interactive Map</title>
+    <title>Genealogy Tree | Interactive Map</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 <body>
 
     <header class="glass-header">
-        <div class="search-container">
-            <input type="text" id="memberSearch" placeholder="Поиск родственников..." autocomplete="off">
-            <div id="searchResults" class="search-results-dropdown"></div>
+        <div class="search-box">
+            <input type="text" id="memberSearch" placeholder="Введите имя..." autocomplete="off">
+            <button id="searchBtn" class="btn-primary">Найти</button>
         </div>
-        <button id="resetView" class="btn-secondary">В центр</button>
     </header>
 
     <div id="canvas-container">
@@ -25,18 +24,24 @@
         <div class="modal-content glass">
             <button class="close-modal">&times;</button>
             <div class="profile-header">
-                <div class="profile-avatar" id="p-avatar"></div>
-                <h2 id="p-name">Имя Фамилия</h2>
-                <p id="p-dates" class="secondary-text">1900 — 1980</p>
+                <div class="avatar-container">
+                    <img id="p-photo" src="" alt="" style="display:none;">
+                    <div id="p-avatar-placeholder" class="profile-avatar"></div>
+                </div>
+                <h2 id="p-name"></h2>
             </div>
             <div class="profile-body">
-                <div class="info-section">
-                    <h4>Контакты</h4>
-                    <p id="p-contact">-</p>
+                <div class="info-row">
+                    <span class="label">Дата рождения:</span>
+                    <span id="p-birth" class="value"></span>
                 </div>
-                <div class="info-section">
-                    <h4>Семья</h4>
-                    <div id="p-relatives" class="rel-tags"></div>
+                <div class="info-row" id="death-row" style="display:none;">
+                    <span class="label">Дата смерти:</span>
+                    <span id="p-death" class="value"></span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Контакты:</span>
+                    <span id="p-contact" class="value"></span>
                 </div>
             </div>
         </div>

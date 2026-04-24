@@ -1,115 +1,95 @@
-// 1. Данные ("Рыба")
+// Рыба данных (сюда же можно подключить d3.csv для Google Sheets)
 const familyData = [
-    { id: 1, name: "Иван Иванов", birth: "1985", phone: "+7 (777) 123-45-67", parents: [3, 4], spouse: [2], children: [5], photo: "" },
-    { id: 2, name: "Мария Иванова", birth: "1988", phone: "+7 (777) 987-65-43", parents: [], spouse: [1], children: [5], photo: "" },
-    { id: 3, name: "Александр Иванов", birth: "1960", phone: "-", parents: [], spouse: [4], children: [1], photo: "" },
-    { id: 4, name: "Елена Иванова", birth: "1962", phone: "-", parents: [], spouse: [3], children: [1], photo: "" },
-    { id: 5, name: "Дмитрий Иванов", birth: "2015", phone: "нет", parents: [1, 2], spouse: [], children: [], photo: "" }
+    { id: 1, name: "Иван Иванов", birth: "12.05.1970", death: null, photo: "https://i.pravatar.cc/150?u=1", phone: "+7 (777) 111", parents: [3], children: [] },
+    { id: 3, name: "Александр Иванов", birth: "01.01.1940", death: "15.03.2010", photo: "https://i.pravatar.cc/150?u=3", phone: "-", parents: [], children: [1] }
 ];
 
-// 2. Инициализация D3 Canvas
 const width = window.innerWidth;
 const height = window.innerHeight;
+
 const svg = d3.select("#treeCanvas")
     .attr("width", width)
     .attr("height", height)
-    .call(d3.zoom().on("zoom", (event) => {
-        g.attr("transform", event.transform);
-    }));
+    .call(d3.zoom().scaleExtent([0.5, 3]).on("zoom", (event) => g.attr("transform", event.transform)));
 
-const g = svg.append("g"); // Группа для всех элементов
+const g = svg.append("g");
 
-// Генерация связей для графа
+// Связи
 const links = [];
-familyData.forEach(person => {
-    person.children.forEach(childId => {
-        links.push({ source: person.id, target: childId });
-    });
-});
+familyData.forEach(p => p.children.forEach(cId => links.push({ source: p.id, target: cId })));
 
-// Симуляция физики
 const simulation = d3.forceSimulation(familyData)
-    .force("link", d3.forceLink(links).id(d => d.id).distance(150))
-    .force("charge", d3.forceManyBody().strength(-500))
+    .force("link", d3.forceLink(links).id(d => d.id).distance(180))
+    .force("charge", d3.forceManyBody().strength(-800))
     .force("center", d3.forceCenter(width / 2, height / 2));
 
-// Отрисовка
-const link = g.append("g")
-    .attr("class", "links")
-    .selectAll("line")
-    .data(links)
-    .enter().append("line")
-    .attr("class", "link");
+const link = g.append("g").selectAll("line").data(links).enter().append("line")
+    .attr("stroke", "#d2d2d7").attr("stroke-width", 2);
 
-const node = g.append("g")
-    .attr("class", "nodes")
-    .selectAll(".node")
-    .data(familyData)
-    .enter().append("g")
+const node = g.append("g").selectAll(".node").data(familyData).enter().append("g")
     .attr("class", "node")
-    .on("click", (event, d) => showProfile(d))
-    .call(d3.drag()
-        .on("start", dragstarted)
-        .on("drag", dragged)
-        .on("end", dragended));
+    .on("click", (e, d) => showProfile(d))
+    .call(d3.drag().on("start", dragStart).on("drag", dragging).on("end", dragEnd));
 
-node.append("circle").attr("r", 30);
-node.append("text")
-    .attr("dy", 45)
-    .attr("text-anchor", "middle")
-    .text(d => d.name);
+node.append("circle").attr("r", 35).attr("fill", "white").attr("stroke", "#0071e3").attr("stroke-width", 2);
+node.append("text").attr("dy", 55).attr("text-anchor", "middle").text(d => d.name).style("font-size", "13px");
 
 simulation.on("tick", () => {
-    link.attr("x1", d => d.source.x)
-        .attr("y1", d => d.source.y)
-        .attr("x2", d => d.target.x)
-        .attr("y2", d => d.target.y);
-
+    link.attr("x1", d => d.source.x).attr("y1", d => d.source.y).attr("x2", d => d.target.x).attr("y2", d => d.target.y);
     node.attr("transform", d => `translate(${d.x},${d.y})`);
 });
 
-// Функции UI
+// ЛОГИКА ПРОФИЛЯ
 function showProfile(person) {
     const modal = document.getElementById('profileModal');
-    document.getElementById('p-name').innerText = person.name;
-    document.getElementById('p-dates').innerText = `${person.birth} — ...`;
-    document.getElementById('p-contact').innerText = person.phone;
     
+    // Имя и Даты
+    document.getElementById('p-name').innerText = person.name;
+    document.getElementById('p-birth').innerText = person.birth;
+    document.getElementById('p-contact').innerText = person.phone;
+
+    // Логика даты смерти
+    const deathRow = document.getElementById('death-row');
+    if (person.death) {
+        deathRow.style.display = 'flex';
+        document.getElementById('p-death').innerText = person.death;
+    } else {
+        deathRow.style.display = 'none';
+    }
+
+    // Фото (Аватар из таблицы)
+    const img = document.getElementById('p-photo');
+    const placeholder = document.getElementById('p-avatar-placeholder');
+    if (person.photo && person.photo !== "") {
+        img.src = person.photo;
+        img.style.display = 'block';
+        placeholder.style.display = 'none';
+    } else {
+        img.style.display = 'none';
+        placeholder.style.display = 'block';
+    }
+
     modal.classList.add('active');
     
-    // Плавное центрирование на узле
-    svg.transition().duration(750).call(
+    // Центрирование камеры
+    svg.transition().duration(800).call(
         d3.zoom().transform, 
         d3.zoomIdentity.translate(width/2 - person.x, height/2 - person.y).scale(1.2)
     );
 }
 
-document.querySelector('.close-modal').onclick = () => {
-    document.getElementById('profileModal').classList.remove('active');
+// ЛОГИКА ПОИСКА ПО КНОПКЕ
+document.getElementById('searchBtn').onclick = function() {
+    const query = document.getElementById('memberSearch').value.toLowerCase();
+    const found = familyData.find(p => p.name.toLowerCase().includes(query));
+    if(found) showProfile(found);
+    else alert("Родственник не найден");
 };
 
-// Поиск
-document.getElementById('memberSearch').oninput = function(e) {
-    const val = e.target.value.toLowerCase();
-    const results = familyData.filter(p => p.name.toLowerCase().includes(val));
-    // Тут можно отрисовать dropdown, для прототипа — авто-фокус первого совпадения
-    if(results.length > 0 && val.length > 2) {
-        showProfile(results[0]);
-    }
-};
+// Закрытие
+document.querySelector('.close-modal').onclick = () => document.getElementById('profileModal').classList.remove('active');
 
-// Drag functions
-function dragstarted(event) {
-  if (!event.active) simulation.alphaTarget(0.3).restart();
-  event.subject.fx = event.subject.x;
-  event.subject.fy = event.subject.y;
-}
-function dragged(event) {
-  event.subject.fx = event.x;
-  event.subject.fy = event.y;
-}
-function dragended(event) {
-  if (!event.active) simulation.alphaTarget(0);
-  event.subject.fx = null;
-  event.subject.fy = null;
-}
+// Технические функции Drag
+function dragStart(event) { if (!event.active) simulation.alphaTarget(0.3).restart(); event.subject.fx = event.subject.x; event.subject.fy = event.subject.y; }
+function dragging(event) { event.subject.fx = event.x; event.subject.fy = event.y; }
+function dragEnd(event) { if (!event.active) simulation.alphaTarget(0); event.subject.fx = null; event.subject.fy = null; }

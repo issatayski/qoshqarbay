@@ -1,68 +1,43 @@
 :root {
-    --bg-color: #f5f5f7;
-    --glass-bg: rgba(255, 255, 255, 0.7);
-    --accent-color: #0071e3;
-    --text-main: #1d1d1f;
+    --apple-bg: #fbfbfd;
+    --accent: #0071e3;
+    --glass: rgba(255, 255, 255, 0.8);
 }
 
-body, html {
-    margin: 0; padding: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background-color: var(--bg-color);
-    overflow: hidden;
-}
+body { margin: 0; background: var(--apple-bg); font-family: -apple-system, sans-serif; overflow: hidden; }
 
-/* Glassmorphism Header */
+/* Дизайн Хедера */
 .glass-header {
-    position: fixed; top: 20px; left: 50%;
-    transform: translateX(-50%);
-    z-index: 100;
-    display: flex; gap: 15px;
-    padding: 10px 20px;
-    background: var(--glass-bg);
-    backdrop-filter: blur(20px);
-    border-radius: 20px;
-    border: 1px solid rgba(255,255,255,0.3);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    position: fixed; top: 30px; left: 50%; transform: translateX(-50%);
+    z-index: 100; background: var(--glass);
+    backdrop-filter: blur(20px); padding: 8px 12px;
+    border-radius: 18px; border: 1px solid rgba(0,0,0,0.1);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
 }
 
-.search-container { position: relative; }
-input#memberSearch {
-    border: none; background: rgba(0,0,0,0.05);
-    padding: 10px 15px; border-radius: 12px;
-    width: 250px; outline: none;
-}
+.search-box { display: flex; gap: 10px; }
+input { border: none; background: rgba(0,0,0,0.05); padding: 10px 15px; border-radius: 12px; width: 200px; outline: none; }
+button.btn-primary { background: var(--accent); color: white; border: none; padding: 8px 20px; border-radius: 12px; cursor: pointer; }
 
-/* Canvas */
-#canvas-container { width: 100vw; height: 100vh; }
-.node circle {
-    fill: white; stroke: var(--accent-color); stroke-width: 2px;
-    transition: all 0.3s ease; cursor: pointer;
-}
-.node:hover circle { r: 35; filter: drop-shadow(0 0 8px rgba(0,113,227,0.4)); }
-.link { fill: none; stroke: #ccc; stroke-width: 1.5px; opacity: 0.6; }
-.node text { font-size: 12px; font-weight: 500; fill: var(--text-main); }
-
-/* Modal Apple-style */
+/* Модальное окно с Blur-фоном */
 .modal-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.2);
-    display: none; align-items: center; justify-content: center;
-    backdrop-filter: blur(5px); z-index: 200;
-}
-.modal-content {
-    width: 350px; padding: 30px; border-radius: 30px;
-    text-align: center; transform: scale(0.8); opacity: 0;
-    transition: all 0.4s cubic-bezier(0.2, 1, 0.3, 1);
+    position: fixed; inset: 0; background: rgba(0,0,0,0.3);
+    backdrop-filter: blur(10px); /* Тот самый блюр фона */
+    display: none; align-items: center; justify-content: center; z-index: 1000;
 }
 .modal-overlay.active { display: flex; }
-.modal-overlay.active .modal-content { transform: scale(1); opacity: 1; }
 
-.profile-avatar {
-    width: 80px; height: 80px; background: #e0e0e0;
-    border-radius: 50%; margin: 0 auto 15px;
+.modal-content {
+    width: 380px; background: white; border-radius: 28px; padding: 30px;
+    position: relative; box-shadow: 0 20px 40px rgba(0,0,0,0.2);
 }
-.rel-tags span {
-    display: inline-block; padding: 5px 12px;
-    background: rgba(0,113,223,0.1); color: var(--accent-color);
-    border-radius: 20px; margin: 4px; font-size: 0.8em; cursor: pointer;
-}
+
+.avatar-container { margin-bottom: 15px; }
+#p-photo { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid var(--accent); }
+.profile-avatar { width: 100px; height: 100px; background: #eee; border-radius: 50%; margin: 0 auto; }
+
+.info-row { display: flex; justify-content: space-between; margin: 10px 0; border-bottom: 1px solid #f0f0f0; padding-bottom: 5px; }
+.label { color: #86868b; font-size: 14px; }
+.value { font-weight: 500; color: #1d1d1f; }
+
+.close-modal { position: absolute; right: 20px; top: 20px; border: none; background: none; font-size: 24px; cursor: pointer; color: #86868b; }
