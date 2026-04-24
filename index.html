@@ -21,38 +21,37 @@
     </div>
 
     <div id="profileModal" class="modal-overlay">
-        <div class="modal-content glass">
-            <button class="close-modal">&times;</button>
-            
-            <div class="profile-header">
-                <div class="avatar-wrapper">
-                    <img id="p-photo" src="" alt="">
-                    <div id="p-avatar-placeholder" class="profile-avatar"></div>
-                </div>
-                <h2 id="p-name"></h2>
-                <div class="dates-badges">
-                    <span id="p-birth-badge"></span>
-                    <span id="p-death-badge" style="display:none;"></span>
-                </div>
-            </div>
+		<div class="modal-content glass">
+			<button class="close-modal">&times;</button>
+			
+			<div class="profile-header-new">
+				<div class="avatar-side">
+					<img id="p-photo" src="" alt="" style="display:none;">
+					<div id="p-avatar-placeholder" class="profile-avatar"></div>
+				</div>
+				<div class="info-side">
+					<h2 id="p-full-name"></h2>
+					<div class="p-dates-row">
+						<span id="p-birth"></span>
+						<span id="p-death" style="display:none;"></span>
+					</div>
+					<a id="p-phone-link" href="" class="phone-link"></a>
+				</div>
+			</div>
 
-            <div class="profile-body">
-                <div class="lineage-section">
-                    <h4>Линия предков (Аталар)</h4>
-                    <div id="p-ancestors" class="lineage-list"></div>
-                </div>
+			<div class="profile-body">
+				<div class="lineage-section">
+					<h4>Линия предков (Аталар)</h4>
+					<div id="p-ancestors" class="lineage-list"></div>
+				</div>
 
-                <div class="current-info">
-                    <p><strong>Тел:</strong> <span id="p-contact"></span></p>
-                </div>
-
-                <div class="lineage-section">
-                    <h4>Потомки (Ұрпақтар)</h4>
-                    <div id="p-descendants" class="lineage-list"></div>
-                </div>
-            </div>
-        </div>
-    </div>
+				<div class="lineage-section">
+					<h4>Потомки (Ұрпақтар)</h4>
+					<div id="p-descendants" class="lineage-list"></div>
+				</div>
+			</div>
+		</div>
+	</div>
 
     <script src="script.js"></script>
 </body>
