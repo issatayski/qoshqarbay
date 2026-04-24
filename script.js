@@ -1,5 +1,5 @@
 // Замените на вашу ссылку CSV
-const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS_H-pS_ID_ВАШ_ID/pub?output=csv";
+const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSLsYHGO0lvQdxVywXS-F7io9Vw2bhpADxTI4nfuf0PdoZh4hVwKPKS0iKTmKycX2WsldvuPur2e58O/pub?output=csv";
 
 let globalData = [];
 
