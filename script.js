@@ -136,7 +136,7 @@ function showProfile(person) {
     const fullNameElement = document.getElementById('p-full-name');
     if (father) {
         const fatherFirstName = father.name.split(' ')[0];
-        fullNameElement.innerText = `${fatherFirstName} ұлы ${person.name}`;
+        fullNameElement.innerText = `${fatherFirstName}ұлы ${person.name}`;
     } else {
         fullNameElement.innerText = person.name;
     }
