@@ -57,11 +57,63 @@ function initGraph(data) {
     });
 
     // Поиск
-    document.getElementById('searchBtn').onclick = () => {
-        const val = document.getElementById('memberSearch').value.toLowerCase();
-        const found = data.find(p => p.name.toLowerCase().includes(val));
-        if (found) showProfile(found);
-    };
+    const searchInput = document.getElementById('memberSearch');
+const searchResults = document.getElementById('searchResults');
+
+// Функция живого поиска при вводе текста
+searchInput.oninput = function() {
+    const val = this.value.toLowerCase();
+    searchResults.innerHTML = ""; // Очищаем старые результаты
+    
+    if (val.length < 2) {
+        searchResults.classList.remove('active');
+        return;
+    }
+
+    // Ищем всех похожих людей
+    const matches = globalData.filter(p => p.name.toLowerCase().includes(val));
+
+    if (matches.length > 0) {
+        searchResults.classList.add('active');
+        matches.forEach(person => {
+            const div = document.createElement('div');
+            div.className = 'search-item';
+            
+            // Находим отца для уточнения (чтобы отличить тезок)
+            const father = globalData.find(f => f.id === person.fatherId);
+            const fatherNote = father ? `${father.name} ұлы` : "Основатель";
+
+            div.innerHTML = `
+                <strong>${person.name}</strong>
+                <span class="sub-name">${fatherNote} | род: ${person.birth}</span>
+            `;
+
+            // При клике на результат — открываем профиль и очищаем поиск
+            div.onclick = () => {
+                showProfile(person);
+                searchResults.classList.remove('active');
+                searchInput.value = person.name;
+            };
+            searchResults.appendChild(div);
+        });
+    } else {
+        searchResults.classList.remove('active');
+    }
+};
+
+// Скрывать поиск при клике вне его
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.input-wrapper')) {
+        searchResults.classList.remove('active');
+    }
+});
+
+// Кнопка "Найти" просто берет первое совпадение
+document.getElementById('searchBtn').onclick = () => {
+    const val = searchInput.value.toLowerCase();
+    const found = globalData.find(p => p.name.toLowerCase().includes(val));
+    if (found) showProfile(found);
+};
 }
 
 // РЕКУРСИЯ: Поиск всех отцов вверх
