@@ -1,9 +1,9 @@
 const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSLsYHGO0lvQdxVywXS-F7io9Vw2bhpADxTI4nfuf0PdoZh4hVwKPKS0iKTmKycX2WsldvuPur2e58O/pub?output=csv";
 
 let globalData = [];
-let simulation, svg, g, zoom;
+let simulation, svg, g, zoomObj;
 let currentView = 'force'; 
-let selectedId = null;
+let activeNodeId = null;
 
 d3.csv(SHEET_URL).then(data => {
     globalData = data.map(d => ({
@@ -15,16 +15,25 @@ d3.csv(SHEET_URL).then(data => {
         phone: d.phone || "",
         fatherId: (d.father_id && d.father_id !== "0") ? String(d.father_id) : null
     }));
-    initGraph();
-    setupEvents();
+    init();
 });
 
-function initGraph() {
+function init() {
     svg = d3.select("#treeCanvas");
     g = svg.append("g");
-    zoom = d3.zoom().scaleExtent([0.05, 3]).on("zoom", (e) => g.attr("transform", e.transform));
-    svg.call(zoom);
+    
+    zoomObj = d3.zoom()
+        .scaleExtent([0.05, 3])
+        .on("zoom", (e) => g.attr("transform", e.transform));
+    
+    svg.call(zoomObj);
+    
+    window.addEventListener('resize', () => {
+        svg.attr("width", window.innerWidth).attr("height", window.innerHeight);
+    });
+
     render();
+    setupInterface();
 }
 
 function render() {
@@ -35,53 +44,61 @@ function render() {
 
     if (currentView === 'force') {
         simulation = d3.forceSimulation(globalData)
-            .force("link", d3.forceLink(links).id(d => d.id).distance(150))
-            .force("charge", d3.forceManyBody().strength(-800))
+            .force("link", d3.forceLink(links).id(d => d.id).distance(160))
+            .force("charge", d3.forceManyBody().strength(-1000))
             .force("center", d3.forceCenter(window.innerWidth/2, window.innerHeight/2))
-            .on("tick", updatePositions);
-        draw(globalData, links);
+            .on("tick", ticked);
+        drawNodes(globalData, links);
     } else {
-        const root = d3.stratify().id(d => d.id).parentId(d => d.fatherId)(globalData);
-        d3.tree().nodeSize([160, 220])(root);
-        const nodes = root.descendants().map(d => ({...d.data, x: d.x + window.innerWidth/2, y: d.y + 100}));
-        const tLinks = root.links().map(l => ({
-            source: nodes.find(n => n.id === l.source.id),
-            target: nodes.find(n => n.id === l.target.id)
-        }));
-        draw(nodes, tLinks);
-        updatePositions();
+        try {
+            const root = d3.stratify().id(d => d.id).parentId(d => d.fatherId)(globalData);
+            d3.tree().nodeSize([180, 240])(root);
+            const nodes = root.descendants().map(d => ({...d.data, x: d.x + window.innerWidth/2, y: d.y + 120}));
+            const tLinks = root.links().map(l => ({
+                source: nodes.find(n => n.id === l.source.id),
+                target: nodes.find(n => n.id === l.target.id)
+            }));
+            drawNodes(nodes, tLinks);
+            ticked();
+        } catch(e) {
+            console.warn("Tree error, falling back to force", e);
+            currentView = 'force'; render();
+        }
     }
 }
 
-function draw(nodes, links) {
+function drawNodes(nodes, links) {
     const link = g.append("g").selectAll("line").data(links).enter().append("line")
-        .attr("class", "link")
+        .attr("class", "tree-link")
         .attr("id", d => `l-${d.source.id || d.source}-${d.target.id || d.target}`);
 
-    const node = g.append("g").selectAll(".node").data(nodes).enter().append("g")
-        .attr("class", "node")
-        .attr("id", d => `n-${d.id}`)
-        .on("click", (e, d) => showProfile(d))
+    const node = g.append("g").selectAll(".node-group").data(nodes).enter().append("g")
+        .attr("class", "node-group")
+        .attr("id", d => `node-${d.id}`)
+        .on("click", (e, d) => openProfile(d))
         .call(d3.drag().on("start", dragStart).on("drag", dragging).on("end", dragEnd));
 
-    node.append("circle").attr("r", 35).attr("class", "n-circle");
-    node.append("clipPath").attr("id", d => `clip-${d.id}`).append("circle").attr("r", 32);
+    node.append("circle").attr("r", 38).attr("class", "node-base");
+    node.append("clipPath").attr("id", d => `cp-${d.id}`).append("circle").attr("r", 35);
+
     node.append("image")
         .attr("xlink:href", d => d.photo || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png")
-        .attr("x", -32).attr("y", -32).attr("width", 64).attr("height", 64)
-        .attr("clip-path", d => `url(#clip-${d.id})`).attr("preserveAspectRatio", "xMidYMid slice");
-    node.append("text").attr("dy", 55).attr("text-anchor", "middle").text(d => d.name);
+        .attr("x", -35).attr("y", -35).attr("width", 70).attr("height", 70)
+        .attr("clip-path", d => `url(#cp-${d.id})`).attr("preserveAspectRatio", "xMidYMid slice");
 
-    if(selectedId) applyHighlight(selectedId);
+    node.append("text").attr("dy", 60).attr("text-anchor", "middle").attr("class", "node-label").text(d => d.name);
+
+    if(activeNodeId) applyHighlight(activeNodeId);
 }
 
-function showProfile(p) {
-    selectedId = p.id;
+function openProfile(p) {
+    activeNodeId = p.id;
     const father = globalData.find(f => f.id === p.fatherId);
+    
     document.getElementById('p-patronymic').innerText = father ? `${father.name} ұлы` : "";
     document.getElementById('p-full-name').innerText = p.name;
-    document.getElementById('p-birth').innerText = p.birth ? `Туылды: ${p.birth}` : "";
-    document.getElementById('p-death').innerText = p.death ? `Қайтты: ${p.death}` : "";
+    document.getElementById('p-birth').innerText = p.birth ? `Туған жылы: ${p.birth}` : "";
+    document.getElementById('p-death').innerText = p.death ? `Қайтқан жылы: ${p.death}` : "";
     
     const phone = document.getElementById('p-phone-link');
     phone.innerText = p.phone || ""; phone.href = `tel:${p.phone}`;
@@ -91,90 +108,90 @@ function showProfile(p) {
     if(p.photo) { img.src = p.photo; img.style.display="block"; ph.style.display="none"; }
     else { img.style.display="none"; ph.style.display="block"; }
 
-    renderPills(p);
+    updatePills(p);
     document.getElementById('profileModal').classList.add('active');
 }
 
 function applyHighlight(id) {
-    g.selectAll(".n-circle").classed("highlight-green", false).classed("highlight-blue", false);
-    g.selectAll(".link").classed("link-blue", false);
+    g.selectAll(".node-base").classed("status-selected", false).classed("status-related", false);
+    g.selectAll(".tree-link").classed("link-active", false);
 
-    // 1. Зеленый - текущий
-    g.select(`#n-${id} .n-circle`).classed("highlight-green", true);
+    g.select(`#node-${id} .node-base`).classed("status-selected", true);
 
-    // 2. Синий - Вся ветка предков вверх
-    let currId = id;
-    while(currId) {
-        let node = globalData.find(n => n.id === currId);
-        if(!node) break;
-        g.select(`#n-${currId} .n-circle`).classed("highlight-blue", !g.select(`#n-${currId} .n-circle`).classed("highlight-green"));
-        if(node.fatherId) {
-            g.select(`#l-${node.fatherId}-${currId}`).classed("link-blue", true);
-            currId = node.fatherId;
-        } else currId = null;
+    // Подсветка всех предков до корня
+    let pathId = id;
+    while(pathId) {
+        let nodeData = globalData.find(n => n.id === pathId);
+        if(!nodeData) break;
+        if(nodeData.id !== id) g.select(`#node-${pathId} .node-base`).classed("status-related", true);
+        if(nodeData.fatherId) {
+            g.select(`#l-${nodeData.fatherId}-${pathId}`).classed("link-active", true);
+            pathId = nodeData.fatherId;
+        } else pathId = null;
     }
 
-    // 3. Синий - Прямые потомки (один уровень вниз)
+    // Подсветка прямых потомков
     globalData.filter(n => n.fatherId === id).forEach(child => {
-        g.select(`#n-${child.id} .n-circle`).classed("highlight-blue", true);
-        g.select(`#l-${id}-${child.id}`).classed("link-blue", true);
+        g.select(`#node-${child.id} .node-base`).classed("status-related", true);
+        g.select(`#l-${id}-${child.id}`).classed("link-active", true);
     });
 }
 
-function renderPills(p) {
-    const aCont = document.getElementById('p-ancestors'), dCont = document.getElementById('p-descendants');
-    aCont.innerHTML = ""; dCont.innerHTML = "";
+function updatePills(p) {
+    const aArea = document.getElementById('p-ancestors'), dArea = document.getElementById('p-descendants');
+    aArea.innerHTML = ""; dArea.innerHTML = "";
     
-    let ancestors = []; let curr = p;
-    while(curr && curr.fatherId) {
-        curr = globalData.find(x => x.id === curr.fatherId);
-        if(curr) ancestors.push(curr);
+    let path = []; let c = p;
+    while(c && c.fatherId) {
+        c = globalData.find(x => x.id === c.fatherId);
+        if(c) path.push(c);
     }
-    ancestors.reverse().forEach((anc, i) => {
-        const span = document.createElement('span'); span.className = 'pill'; span.innerText = anc.name;
-        span.onclick = (e) => { e.stopPropagation(); showProfile(anc); };
-        aCont.appendChild(span);
-        if(i < ancestors.length - 1) aCont.innerHTML += '<span class="arr">→</span>';
+    path.reverse().forEach((anc, i) => {
+        const span = document.createElement('span'); span.className = 'pill-item'; span.innerText = anc.name;
+        span.onclick = (e) => { e.stopPropagation(); openProfile(anc); };
+        aArea.appendChild(span);
+        if(i < path.length - 1) aArea.innerHTML += '<b class="arrow-divider">→</b>';
     });
 
-    globalData.filter(x => x.fatherId === p.id).forEach(c => {
-        const span = document.createElement('span'); span.className = 'pill'; span.innerText = c.name;
-        span.onclick = (e) => { e.stopPropagation(); showProfile(c); };
-        dCont.appendChild(span);
+    globalData.filter(x => x.fatherId === p.id).forEach(child => {
+        const span = document.createElement('span'); span.className = 'pill-item'; span.innerText = child.name;
+        span.onclick = (e) => { e.stopPropagation(); openProfile(child); };
+        dArea.appendChild(span);
     });
 }
 
-function setupEvents() {
-    document.getElementById('jumpToNode').onclick = () => {
+function setupInterface() {
+    document.getElementById('profileJumpBtn').onclick = () => {
         document.getElementById('profileModal').classList.remove('active');
-        const node = globalData.find(n => n.id === selectedId);
-        applyHighlight(selectedId);
-        svg.transition().duration(800).call(zoom.transform, d3.zoomIdentity.translate(window.innerWidth/2 - node.x*1.2, window.innerHeight/2 - node.y*1.2).scale(1.2));
+        const node = globalData.find(n => n.id === activeNodeId);
+        applyHighlight(activeNodeId);
+        const scale = 1.2;
+        svg.transition().duration(800).call(zoomObj.transform, d3.zoomIdentity.translate(window.innerWidth/2 - node.x*scale, window.innerHeight/2 - node.y*scale).scale(scale));
     };
 
-    const inp = document.getElementById('memberSearch'), res = document.getElementById('searchResults');
+    const inp = document.getElementById('memberSearch'), list = document.getElementById('searchResults');
     inp.oninput = () => {
-        const v = inp.value.toLowerCase(); res.innerHTML = "";
-        if(v.length < 2) return res.classList.remove('active');
-        globalData.filter(p => p.name.toLowerCase().includes(v)).forEach(p => {
+        const val = inp.value.toLowerCase(); list.innerHTML = "";
+        if(val.length < 2) return list.classList.remove('active');
+        globalData.filter(p => p.name.toLowerCase().includes(val)).forEach(p => {
             const f = globalData.find(x => x.id === p.fatherId);
-            const div = document.createElement('div'); div.className = 's-item';
-            div.innerHTML = `<strong>${p.name}</strong><small>${f ? f.name+' ұлы' : ''} | ${p.birth}</small>`;
-            div.onclick = () => { showProfile(p); res.classList.remove('active'); inp.value=""; };
-            res.appendChild(div);
+            const d = document.createElement('div'); d.className = 'search-row';
+            d.innerHTML = `<strong>${p.name}</strong><small>${f ? f.name+' ұлы' : ''} ${p.birth ? '| '+p.birth : ''}</small>`;
+            d.onclick = () => { openProfile(p); list.classList.remove('active'); inp.value=""; };
+            list.appendChild(d);
         });
-        res.classList.add('active');
+        list.classList.add('active');
     };
 
+    document.getElementById('mobileSearchBtn').onclick = () => document.getElementById('searchContainer').classList.toggle('visible');
+    document.getElementById('burgerToggle').onclick = () => { document.getElementById('navLinks').classList.toggle('active'); document.getElementById('burgerToggle').classList.toggle('opened'); };
     document.getElementById('viewFilter').onclick = () => { currentView = currentView === 'force' ? 'tree' : 'force'; render(); };
-    document.getElementById('mobileSearchOpen').onclick = () => document.getElementById('searchWrapper').classList.toggle('show');
-    document.getElementById('burgerBtn').onclick = () => { document.getElementById('navMenu').classList.toggle('active'); document.getElementById('burgerBtn').classList.toggle('open'); };
-    document.querySelector('.close-modal').onclick = () => document.getElementById('profileModal').classList.remove('active');
+    document.querySelector('.modal-close').onclick = () => document.getElementById('profileModal').classList.remove('active');
 }
 
-function updatePositions() {
-    g.selectAll(".link").attr("x1", d => d.source.x).attr("y1", d => d.source.y).attr("x2", d => d.target.x).attr("y2", d => d.target.y);
-    g.selectAll(".node").attr("transform", d => `translate(${d.x},${d.y})`);
+function ticked() {
+    g.selectAll(".tree-link").attr("x1", d => d.source.x).attr("y1", d => d.source.y).attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+    g.selectAll(".node-group").attr("transform", d => `translate(${d.x},${d.y})`);
 }
 function dragStart(e) { if (!e.active && simulation) simulation.alphaTarget(0.3).restart(); e.subject.fx = e.subject.x; e.subject.fy = e.subject.y; }
 function dragging(e) { e.subject.fx = e.x; e.subject.fy = e.y; }

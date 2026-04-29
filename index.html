@@ -11,70 +11,70 @@
 
     <nav class="main-nav">
         <div class="nav-container">
-            <div class="logo-section" onclick="location.reload()">
+            <div class="logo-group" onclick="location.reload()">
                 <span class="logo-icon">🌳</span>
                 <span class="logo-text">ШЕЖІРЕ</span>
             </div>
             
-            <ul class="nav-menu" id="navMenu">
+            <ul class="nav-links" id="navLinks">
                 <li><a href="#">Ақпарат</a></li>
                 <li><a href="#">Білгенге маржан</a></li>
                 <li><a href="#">Хабарласу</a></li>
             </ul>
 
-            <div class="nav-controls">
-                <div class="search-area">
-                    <button class="mobile-only-btn" id="mobileSearchOpen">🔍</button>
-                    <div class="search-box-wrapper" id="searchWrapper">
+            <div class="nav-actions">
+                <div class="search-engine">
+                    <button class="search-toggle" id="mobileSearchBtn">🔍</button>
+                    <div class="search-input-container" id="searchContainer">
                         <input type="text" id="memberSearch" placeholder="Іздеу..." autocomplete="off">
-                        <div id="searchResults" class="search-dropdown"></div>
+                        <div id="searchResults" class="search-results-list"></div>
                     </div>
                 </div>
                 
-                <button id="viewFilter" class="control-btn" title="Ағаш көрінісі">🌳</button>
-                <button class="burger-btn" id="burgerBtn"><span></span></button>
+                <button id="viewFilter" class="action-icon-btn" title="Ағаш көрінісі">🌳</button>
+                <button class="burger-menu" id="burgerToggle"><span></span></button>
             </div>
         </div>
     </nav>
 
-    <div id="canvas-container">
+    <main id="canvas-container">
         <svg id="treeCanvas">
             <defs>
-                <marker id="arrowhead" viewBox="0 -5 10 10" refX="35" refY="0" markerWidth="6" markerHeight="6" orient="auto">
+                <marker id="arrow" viewBox="0 -5 10 10" refX="35" refY="0" markerWidth="6" markerHeight="6" orient="auto">
                     <path d="M0,-5L10,0L0,5" fill="#ccc"></path>
                 </marker>
             </defs>
         </svg>
-    </div>
+    </main>
 
     <div id="profileModal" class="modal-overlay">
-        <div class="modal-content">
-            <button class="close-modal">&times;</button>
+        <div class="modal-window">
+            <button class="modal-close">&times;</button>
             
-            <div class="profile-main-header" id="jumpToNode" title="Картадан көру">
-                <div class="p-avatar-box">
+            <div class="profile-header-card" id="profileJumpBtn">
+                <div class="profile-avatar-wrapper">
                     <img id="p-photo" src="" alt="" style="display:none;">
-                    <div id="p-avatar-placeholder" class="empty-avatar"></div>
+                    <div id="p-avatar-placeholder" class="placeholder-avatar"></div>
                 </div>
-                <div class="p-info-box">
+                <div class="profile-main-info">
                     <div class="p-patronymic" id="p-patronymic"></div>
                     <h2 class="p-name" id="p-full-name"></h2>
-                    <div class="p-meta">
-                        <span id="p-birth"></span>
-                        <span id="p-death"></span>
-                        <a id="p-phone-link" href="" class="p-phone"></a>
+                    <div class="p-meta-data">
+                        <div id="p-birth"></div>
+                        <div id="p-death"></div>
+                        <a id="p-phone-link" href="" class="p-phone-num"></a>
                     </div>
                 </div>
             </div>
 
-            <div class="profile-scroll-area">
-                <div class="lineage-block">
-                    <h4>Аталар (Предки)</h4>
-                    <div id="p-ancestors" class="p-pills-row"></div>
+            <div class="profile-details-scroll">
+                <div class="lineage-group">
+                    <label>Аталар (Предки)</label>
+                    <div id="p-ancestors" class="pills-container ancestors-list"></div>
                 </div>
-                <div class="lineage-block">
-                    <h4>Ұрпақтар (Потомки)</h4>
-                    <div id="p-descendants" class="p-pills-row"></div>
+                <div class="lineage-group">
+                    <label>Ұрпақтар (Потомки)</label>
+                    <div id="p-descendants" class="pills-container descendants-list"></div>
                 </div>
             </div>
         </div>
