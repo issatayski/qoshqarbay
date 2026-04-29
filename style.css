@@ -15,7 +15,7 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
-/* Сызықтар және стрелкалар */
+/* Линии и стрелки */
 .tree-link {
     stroke: #d2d2d7;
     stroke-width: 2;
@@ -23,15 +23,11 @@ body {
     transition: stroke 0.3s, stroke-width 0.3s;
 }
 
-/* Белсенді сызық пен стрелка түсі */
 .link-active {
     stroke: var(--accent);
     stroke-width: 3;
     opacity: 1;
 }
-
-/* Marker (стрелка басы) түсін CSS арқылы басқару қиын болғандықтан, 
-   белсенді күйде маркерді де өзгерту үшін SVG қолданылады (JS-те реттелген) */
 
 .main-nav {
     position: fixed; top: 0; width: 100%; height: var(--header);
@@ -50,8 +46,43 @@ body {
 
 .nav-actions { display: flex; align-items: center; gap: 15px; }
 
-#memberSearch { border: none; background: rgba(0,0,0,0.06); padding: 12px 18px; border-radius: 14px; width: 240px; outline: none; font-size: 15px; transition: 0.3s; }
-#memberSearch:focus { background: #fff; box-shadow: 0 0 0 4px rgba(0,113,227,0.1); width: 300px; }
+/* ИСПРАВЛЕНИЕ ПОИСКА НА ДЕСКТОПЕ */
+.search-engine {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+/* Скрываем кнопку лупы на десктопе, так как поле поиска уже открыто */
+.search-toggle { 
+    display: none; 
+    background: #fff; 
+    border: 1px solid #e3e3e7; 
+    padding: 10px; 
+    border-radius: 14px; 
+    cursor: pointer; 
+    font-size: 18px; 
+}
+
+.search-input-container {
+    display: block; /* Всегда отображаем на десктопе */
+}
+
+#memberSearch { 
+    border: none; 
+    background: rgba(0,0,0,0.06); 
+    padding: 12px 18px; 
+    border-radius: 14px; 
+    width: 240px; 
+    outline: none; 
+    font-size: 15px; 
+    transition: 0.3s; 
+}
+#memberSearch:focus { 
+    background: #fff; 
+    box-shadow: 0 0 0 4px rgba(0,113,227,0.1); 
+    width: 300px; 
+}
 
 .search-results-list { 
     position: absolute; top: 55px; right: 0; width: 320px; 
@@ -64,9 +95,10 @@ body {
 .search-row strong { color: var(--accent); font-size: 15px; }
 .search-row small { font-size: 12px; color: #888; margin-top: 3px; }
 
-.action-icon-btn, .search-toggle { background: #fff; border: 1px solid #e3e3e7; padding: 10px; border-radius: 14px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+.action-icon-btn { background: #fff; border: 1px solid #e3e3e7; padding: 10px; border-radius: 14px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
 .action-icon-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
 
+/* Остальные стили профиля */
 .node-base { fill: #fff; stroke: var(--accent); stroke-width: 2.5; transition: 0.3s; }
 .status-selected { stroke: var(--green) !important; stroke-width: 10 !important; }
 .status-related { stroke: var(--accent) !important; stroke-width: 6 !important; }
@@ -109,13 +141,29 @@ body {
 .burger-menu.opened span:nth-child(2) { opacity: 0; left: -40px; }
 .burger-menu.opened span:nth-child(3) { top: 9px; transform: rotate(-135deg); }
 
+/* МОБИЛЬНЫЕ СТИЛИ */
 @media (max-width: 900px) {
     .nav-links { position: fixed; top: var(--header); left: -100%; width: 100%; height: 100vh; background: #fff; flex-direction: column; align-items: center; padding-top: 40px; transition: 0.4s; }
     .nav-links.active { left: 0; }
     .burger-menu { display: block; }
-    .search-input-container { position: fixed; top: var(--header); left: 0; width: 100%; background: #fff; padding: 12px; display: none; border-bottom: 1px solid #eee; box-sizing: border-box; box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
+
+    .search-toggle { display: flex; } /* Показываем лупу на мобилке */
+    
+    .search-input-container { 
+        position: fixed; top: var(--header); left: 0; width: 100%; 
+        background: #fff; padding: 12px; display: none; 
+        border-bottom: 1px solid #eee; box-sizing: border-box; 
+        box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+    }
     .search-input-container.visible { display: block; }
     #memberSearch { width: 100% !important; box-sizing: border-box; }
-    .search-results-list { position: fixed; top: calc(var(--header) + 65px); left: 12px; right: 12px; width: auto; }
+    .search-results-list { 
+        position: fixed; 
+        top: calc(var(--header) + 65px); 
+        left: 12px; 
+        right: 12px; 
+        width: auto; 
+    }
+    
     .profile-header-card { gap: 15px; }
 }
