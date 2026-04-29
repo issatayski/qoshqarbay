@@ -23,6 +23,19 @@ function init() {
             .attr("width", window.innerWidth)
             .attr("height", window.innerHeight);
     
+    // Стрелка басының анықтамасы (Marker)
+    svg.append("defs").append("marker")
+        .attr("id", "arrowhead")
+        .attr("viewBox", "0 -5 10 10")
+        .attr("refX", 55) // Шеңберден қашықтығы
+        .attr("refY", 0)
+        .attr("markerWidth", 6)
+        .attr("markerHeight", 6)
+        .attr("orient", "auto")
+        .append("path")
+        .attr("d", "M0,-5L10,0L0,5")
+        .attr("fill", "#d2d2d7");
+
     g = svg.append("g");
     
     zoomObj = d3.zoom()
@@ -85,7 +98,7 @@ function render() {
                 d3.zoomIdentity.translate(window.innerWidth/2 - nodes.find(n=>n.id==="1").x, 50).scale(0.7)
             );
         } catch (err) {
-            console.error("Ошибка построения иерархии:", err);
+            console.error("Ошибка:", err);
         }
     }
 }
@@ -97,6 +110,7 @@ function drawGraph(nodes, links) {
     const link = linkContainer.selectAll(".tree-link").data(links).enter().append("path")
         .attr("class", "tree-link")
         .attr("id", d => `l-${(d.source.id || d.source)}-${(d.target.id || d.target)}`)
+        .attr("marker-end", "url(#arrowhead)") // Стрелканы қосу
         .attr("fill", "none");
 
     const node = nodeContainer.selectAll(".node-group").data(nodes).enter().append("g")
@@ -204,10 +218,7 @@ function updatePills(p) {
         const span = document.createElement('span'); 
         span.className = 'pill-item'; 
         span.innerText = anc.name;
-        span.onclick = (e) => { 
-            e.stopPropagation(); 
-            openProfile(anc); 
-        };
+        span.onclick = (e) => { e.stopPropagation(); openProfile(anc); };
         aArea.appendChild(span);
         if(i < path.length - 1) {
             const arrow = document.createElement('b');
@@ -217,7 +228,11 @@ function updatePills(p) {
         }
     });
 
-    globalData.filter(x => x.fatherId === p.id).forEach(child => {
+    // Ұрпақтарды ID бойынша сұрыптау (кішісінен үлкеніне)
+    const descendants = globalData.filter(x => x.fatherId === p.id);
+    descendants.sort((a, b) => Number(a.id) - Number(b.id));
+
+    descendants.forEach(child => {
         const span = document.createElement('span'); 
         span.className = 'pill-item'; 
         span.innerText = child.name;
@@ -227,6 +242,9 @@ function updatePills(p) {
 }
 
 function setupInterface() {
+    const searchCont = document.getElementById('searchContainer');
+    const inp = document.getElementById('memberSearch'), list = document.getElementById('searchResults');
+
     document.getElementById('profileJumpBtn').onclick = () => {
         document.getElementById('profileModal').classList.remove('active');
         const node = globalData.find(n => n.id === activeNodeId);
@@ -234,10 +252,6 @@ function setupInterface() {
         const scale = 1.1;
         svg.transition().duration(800).call(zoomObj.transform, d3.zoomIdentity.translate(window.innerWidth/2 - node.x*scale, window.innerHeight/2 - node.y*scale).scale(scale));
     };
-
-    const inp = document.getElementById('memberSearch'), 
-          list = document.getElementById('searchResults'),
-          searchCont = document.getElementById('searchContainer');
 
     inp.oninput = () => {
         const val = inp.value.toLowerCase(); list.innerHTML = "";
@@ -250,7 +264,7 @@ function setupInterface() {
                 openProfile(p); 
                 list.classList.remove('active'); 
                 inp.value=""; 
-                searchCont.classList.remove('visible'); // Жабылуы
+                searchCont.classList.remove('visible'); 
             };
             list.appendChild(d);
         });
@@ -258,17 +272,11 @@ function setupInterface() {
     };
 
     document.getElementById('mobileSearchBtn').onclick = () => searchCont.classList.toggle('visible');
-    
     document.getElementById('burgerToggle').onclick = function() {
         this.classList.toggle('opened');
         document.getElementById('navLinks').classList.toggle('active');
     };
-
-    document.getElementById('viewFilter').onclick = () => { 
-        currentView = currentView === 'force' ? 'tree' : 'force'; 
-        render(); 
-    };
-    
+    document.getElementById('viewFilter').onclick = () => { currentView = currentView === 'force' ? 'tree' : 'force'; render(); };
     document.querySelector('.modal-close').onclick = () => document.getElementById('profileModal').classList.remove('active');
 }
 
