@@ -13,7 +13,6 @@ d3.csv(SHEET_URL).then(data => {
         birth: d.birth || "",
         death: d.death || "",
         phone: d.phone || "",
-        // Если id человека 1, у него нет отца по определению
         fatherId: (d.id === "1" || !d.father_id || d.father_id === "0") ? null : String(d.father_id)
     }));
     init();
@@ -58,20 +57,16 @@ function render() {
             
         drawGraph(globalData, linksData);
     } else {
-        // Режим Дерева (Иерархия)
         try {
             const stratify = d3.stratify()
                 .id(d => d.id)
                 .parentId(d => d.fatherId);
             
             const root = stratify(globalData);
-            
-            // Расчет дерева: горизонтальный шаг 250, вертикальный 300
             const treeLayout = d3.tree().nodeSize([250, 300]);
             treeLayout(root);
 
             const nodes = root.descendants().map(d => {
-                // Смещение всей структуры для центрирования
                 d.xPos = d.x + window.innerWidth / 2;
                 d.yPos = d.y + 150;
                 return Object.assign(d.data, { x: d.xPos, y: d.yPos });
@@ -85,14 +80,12 @@ function render() {
             drawGraph(nodes, links);
             ticked(); 
 
-            // Плавный зум на вершину (id: 1)
             svg.transition().duration(1000).call(
                 zoomObj.transform, 
                 d3.zoomIdentity.translate(window.innerWidth/2 - nodes.find(n=>n.id==="1").x, 50).scale(0.7)
             );
         } catch (err) {
             console.error("Ошибка построения иерархии:", err);
-            alert("Ошибка в данных таблицы: убедитесь, что у всех (кроме ID 1) правильно указан ID отца.");
         }
     }
 }
@@ -132,31 +125,16 @@ function drawGraph(nodes, links) {
 
 function ticked() {
     if (currentView === 'force') {
-        g.selectAll(".tree-link")
-            .attr("d", d => `M${d.source.x},${d.source.y} L${d.target.x},${d.target.y}`);
+        g.selectAll(".tree-link").attr("d", d => `M${d.source.x},${d.source.y} L${d.target.x},${d.target.y}`);
     } else {
-        // Красивые кривые линии для дерева
-        g.selectAll(".tree-link")
-            .attr("d", d => {
-                return `M${d.source.x},${d.source.y} 
-                        C${d.source.x},${(d.source.y + d.target.y) / 2} 
-                         ${d.target.x},${(d.source.y + d.target.y) / 2} 
-                         ${d.target.x},${d.target.y}`;
-            });
+        g.selectAll(".tree-link").attr("d", d => `M${d.source.x},${d.source.y} C${d.source.x},${(d.source.y + d.target.y) / 2} ${d.target.x},${(d.source.y + d.target.y) / 2} ${d.target.x},${d.target.y}`);
     }
-    
-    g.selectAll(".node-group")
-        .attr("transform", d => `translate(${d.x},${d.y})`);
+    g.selectAll(".node-group").attr("transform", d => `translate(${d.x},${d.y})`);
 }
-
-// Остальные функции (applyHighlight, openProfile, updatePills, setupInterface, drag) 
-// остаются без изменений из вашего исходного кода, так как они работают корректно.
-// (Для экономии места здесь не дублирую, просто вставьте их из вашего старого файла)
 
 function applyHighlight(id) {
     g.selectAll(".node-base").classed("status-selected", false).classed("status-related", false);
     g.selectAll(".tree-link").classed("link-active", false);
-
     g.select(`#node-${id} .node-base`).classed("status-selected", true);
 
     let pathId = id;
@@ -169,7 +147,6 @@ function applyHighlight(id) {
             pathId = nodeData.fatherId;
         } else pathId = null;
     }
-
     globalData.filter(n => n.fatherId === id).forEach(child => {
         g.select(`#node-${child.id} .node-base`).classed("status-related", true);
         g.select(`#l-${id}-${child.id}`).classed("link-active", true);
@@ -180,11 +157,30 @@ function openProfile(p) {
     activeNodeId = p.id;
     const father = globalData.find(f => f.id === p.fatherId);
     
-    // ИЗМЕНЕНО: Слитное написание отчества
     document.getElementById('p-patronymic').innerText = father ? `${father.name}ұлы` : "";
     document.getElementById('p-full-name').innerText = p.name;
+    document.getElementById('p-birth').innerText = p.birth ? `Туған жылы: ${p.birth}` : "";
+    document.getElementById('p-death').innerText = p.death ? `Өмірден өткен жылы: ${p.death}` : "";
     
-    // ... (код отображения даты и фото без изменений)
+    const phoneLink = document.getElementById('p-phone-link');
+    if(p.phone) {
+        phoneLink.href = `tel:${p.phone}`;
+        phoneLink.innerText = p.phone;
+        phoneLink.style.display = "block";
+    } else {
+        phoneLink.style.display = "none";
+    }
+
+    const img = document.getElementById('p-photo');
+    const placeholder = document.getElementById('p-avatar-placeholder');
+    if(p.photo) {
+        img.src = p.photo;
+        img.style.display = "block";
+        placeholder.style.display = "none";
+    } else {
+        img.style.display = "none";
+        placeholder.style.display = "block";
+    }
     
     updatePills(p);
     document.getElementById('profileModal').classList.add('active');
@@ -194,7 +190,6 @@ function updatePills(p) {
     const aArea = document.getElementById('p-ancestors'), dArea = document.getElementById('p-descendants');
     aArea.innerHTML = ""; dArea.innerHTML = "";
     
-    // Получаем всех предков по цепочке вверх
     let path = []; 
     let current = p;
     while(current && current.fatherId) {
@@ -202,26 +197,26 @@ function updatePills(p) {
         if(father) {
             path.push(father);
             current = father;
-        } else {
-            break;
-        }
+        } else break;
     }
 
-    // Отрисовка предков (теперь все кликабельны)
     path.reverse().forEach((anc, i) => {
         const span = document.createElement('span'); 
         span.className = 'pill-item'; 
         span.innerText = anc.name;
-        // Клик переводит на профиль этого предка
         span.onclick = (e) => { 
             e.stopPropagation(); 
             openProfile(anc); 
         };
         aArea.appendChild(span);
-        if(i < path.length - 1) aArea.innerHTML += '<b class="arrow-divider">→</b>';
+        if(i < path.length - 1) {
+            const arrow = document.createElement('b');
+            arrow.className = 'arrow-divider';
+            arrow.innerText = '→';
+            aArea.appendChild(arrow);
+        }
     });
 
-    // Отрисовка потомков
     globalData.filter(x => x.fatherId === p.id).forEach(child => {
         const span = document.createElement('span'); 
         span.className = 'pill-item'; 
@@ -240,7 +235,10 @@ function setupInterface() {
         svg.transition().duration(800).call(zoomObj.transform, d3.zoomIdentity.translate(window.innerWidth/2 - node.x*scale, window.innerHeight/2 - node.y*scale).scale(scale));
     };
 
-    const inp = document.getElementById('memberSearch'), list = document.getElementById('searchResults');
+    const inp = document.getElementById('memberSearch'), 
+          list = document.getElementById('searchResults'),
+          searchCont = document.getElementById('searchContainer');
+
     inp.oninput = () => {
         const val = inp.value.toLowerCase(); list.innerHTML = "";
         if(val.length < 2) return list.classList.remove('active');
@@ -248,13 +246,18 @@ function setupInterface() {
             const f = globalData.find(x => x.id === p.fatherId);
             const d = document.createElement('div'); d.className = 'search-row';
             d.innerHTML = `<strong>${p.name}</strong><small>${f ? f.name+'ұлы' : ''} ${p.birth ? '| '+p.birth : ''}</small>`;
-            d.onclick = () => { openProfile(p); list.classList.remove('active'); inp.value=""; };
+            d.onclick = () => { 
+                openProfile(p); 
+                list.classList.remove('active'); 
+                inp.value=""; 
+                searchCont.classList.remove('visible'); // Жабылуы
+            };
             list.appendChild(d);
         });
         list.classList.add('active');
     };
 
-    document.getElementById('mobileSearchBtn').onclick = () => document.getElementById('searchContainer').classList.toggle('visible');
+    document.getElementById('mobileSearchBtn').onclick = () => searchCont.classList.toggle('visible');
     
     document.getElementById('burgerToggle').onclick = function() {
         this.classList.toggle('opened');
