@@ -85,6 +85,7 @@ function runTreeLayout(data, links) {
     g.selectAll(".node").attr("transform", d => `translate(${d.x},${d.y})`);
 }
 
+// Исправленная функция отрисовки элементов графа
 function drawGraphElements(nodes, links) {
     const link = g.append("g").selectAll("line").data(links).enter().append("line")
         .attr("class", "link")
@@ -95,9 +96,83 @@ function drawGraphElements(nodes, links) {
         .on("click", (e, d) => showProfile(d))
         .call(d3.drag().on("start", dragStart).on("drag", dragging).on("end", dragEnd));
 
-    node.append("circle").attr("r", 25).attr("fill", "#fff").attr("stroke", "#0071e3").attr("stroke-width", 2);
-    node.append("text").attr("dy", 45).attr("text-anchor", "middle").text(d => d.name);
+    // Добавляем круг-подложку
+    node.append("circle")
+        .attr("r", 28)
+        .attr("fill", "#fff")
+        .attr("stroke", "#0071e3")
+        .attr("stroke-width", 2);
+
+    // Добавляем аватар прямо в граф
+    node.append("clipPath")
+        .attr("id", d => `clip-${d.id}`)
+        .append("circle")
+        .attr("r", 26);
+
+    node.append("image")
+        .attr("xlink:href", d => (d.photo && d.photo.length > 5) ? d.photo : "https://cdn-icons-png.flaticon.com/512/3135/3135715.png")
+        .attr("x", -26)
+        .attr("y", -26)
+        .attr("width", 52)
+        .attr("height", 52)
+        .attr("clip-path", d => `url(#clip-${d.id})`)
+        .attr("preserveAspectRatio", "xMidYMid slice");
+
+    node.append("text")
+        .attr("dy", 45)
+        .attr("text-anchor", "middle")
+        .text(d => d.name)
+        .style("font-size", "12px")
+        .style("fill", "#1d1d1f");
 }
+
+// Исправленная логика дерева (Tree Layout)
+function runTreeLayout(data, links) {
+    try {
+        const stratify = d3.stratify()
+            .id(d => d.id)
+            .parentId(d => d.fatherId);
+        
+        const root = stratify(data);
+        const treeLayout = d3.tree().nodeSize([100, 250]);
+        treeLayout(root);
+
+        const treeNodes = root.descendants();
+        const treeLinks = root.links();
+
+        // Смещение для центрирования дерева
+        treeNodes.forEach(d => {
+            d.x_orig = d.x;
+            d.y_orig = d.y;
+            // Инвертируем x и y для горизонтального отображения
+            d.x = d.y_orig + 100; 
+            d.y = d.x_orig + (window.innerHeight / 2);
+        });
+
+        // Важно: передаем данные через .data
+        drawGraphElements(treeNodes.map(d => ({...d.data, x: d.x, y: d.y})), 
+                          treeLinks.map(l => ({
+                              source: {...l.source.data, x: l.source.x, y: l.source.y}, 
+                              target: {...l.target.data, x: l.target.x, y: l.target.y}
+                          })));
+        
+        updatePositions();
+    } catch (e) {
+        console.error("Ошибка построения дерева (возможно, нет корневого элемента):", e);
+        alert("Для режима дерева нужен один общий предок (id без father_id)");
+        currentView = 'force';
+        renderGraph();
+    }
+}
+
+function updatePositions() {
+    g.selectAll(".link")
+        .attr("x1", d => d.source.x).attr("y1", d => d.source.y)
+        .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+    g.selectAll(".node")
+        .attr("transform", d => `translate(${d.x},${d.y})`);
+}
+
 
 // Умная подсветка: предок -> цель -> дети
 function highlightFullLineage(targetId) {
@@ -141,49 +216,7 @@ document.getElementById('viewFilter').onclick = function() {
     renderGraph();
 };
 
-function showProfile(person) {
-    const modal = document.getElementById('profileModal');
-    const father = globalData.find(p => p.id === person.fatherId);
-    const fullNameElement = document.getElementById('p-full-name');
-    fullNameElement.innerText = father ? `${father.name.split(' ')[0]}ұлы ${person.name}` : person.name;
 
-    document.querySelector('.info-side').onclick = () => {
-        modal.classList.remove('active');
-        highlightFullLineage(person.id);
-        
-        const width = window.innerWidth;
-        const height = window.innerHeight;
-        const targetX = person.x || width/2;
-        const targetY = person.y || height/2;
-
-        svg.transition().duration(1000).call(
-            d3.zoom().transform, 
-            d3.zoomIdentity.translate(width/2 - targetX * 1.2, height/2 - targetY * 1.2).scale(1.2)
-        );
-    };
-
-    // Остальная логика профиля (даты, телефон, предки/потомки) остается прежней...
-    document.getElementById('p-birth').innerText = `род. ${person.birth}`;
-    const deathElem = document.getElementById('p-death');
-    if (person.death) { deathElem.innerText = ` — ум. ${person.death}`; deathElem.style.display = 'inline'; } 
-    else { deathElem.style.display = 'none'; }
-
-    const phoneLink = document.getElementById('p-phone-link');
-    if (person.phone && person.phone !== "—") {
-        phoneLink.innerText = person.phone;
-        phoneLink.href = `tel:${person.phone.replace(/\D/g, '')}`;
-        phoneLink.style.display = 'block';
-    } else { phoneLink.style.display = 'none'; }
-
-    const img = document.getElementById('p-photo');
-    const placeholder = document.getElementById('p-avatar-placeholder');
-    if (person.photo && person.photo.length > 5) {
-        img.src = person.photo; img.style.display = 'block'; placeholder.style.display = 'none';
-    } else { img.style.display = 'none'; placeholder.style.display = 'block'; }
-
-    renderLineageLists(person);
-    modal.classList.add('active');
-}
 
 function renderLineageLists(person) {
     const ancCont = document.getElementById('p-ancestors');

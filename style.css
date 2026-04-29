@@ -104,3 +104,31 @@ body {
     #memberSearch { width: 120px; }
     #memberSearch:focus { width: 160px; }
 }
+
+/* Фикс отображения аватаров */
+#p-photo {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: none; /* Управляется JS */
+}
+
+.profile-avatar {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: #e5e5e7 url('https://cdn-icons-png.flaticon.com/512/3135/3135715.png') no-repeat center;
+    background-size: 50%;
+    border: 3px solid var(--accent);
+}
+
+.node image {
+    pointer-events: none;
+}
+
+/* Стили для активных связей */
+.link[stroke="#28a745"] {
+    stroke-opacity: 1;
+    stroke-dasharray: none;
+}
