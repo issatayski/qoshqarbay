@@ -11,7 +11,7 @@
 
     <nav class="main-nav">
         <div class="nav-container">
-            <div class="logo" onclick="location.reload()">
+            <div class="logo-section" onclick="location.reload()">
                 <span class="logo-icon">🌳</span>
                 <span class="logo-text">ШЕЖІРЕ</span>
             </div>
@@ -23,16 +23,16 @@
             </ul>
 
             <div class="nav-controls">
-                <div class="search-container" id="searchContainer">
-                    <button class="mobile-search-trigger" id="searchTrigger">🔍</button>
-                    <div class="search-wrapper" id="searchWrapper">
+                <div class="search-area">
+                    <button class="mobile-only-btn" id="mobileSearchOpen">🔍</button>
+                    <div class="search-box-wrapper" id="searchWrapper">
                         <input type="text" id="memberSearch" placeholder="Іздеу..." autocomplete="off">
                         <div id="searchResults" class="search-dropdown"></div>
                     </div>
                 </div>
                 
-                <button id="viewFilter" class="icon-btn" title="Көріністі өзгерту">🌳</button>
-                <button class="burger-menu" id="burgerBtn"><span></span></button>
+                <button id="viewFilter" class="control-btn" title="Ағаш көрінісі">🌳</button>
+                <button class="burger-btn" id="burgerBtn"><span></span></button>
             </div>
         </div>
     </nav>
@@ -48,33 +48,33 @@
     </div>
 
     <div id="profileModal" class="modal-overlay">
-        <div class="modal-content glass">
+        <div class="modal-content">
             <button class="close-modal">&times;</button>
             
-            <div class="profile-header-new" id="profileHeaderArea" title="Картада көрсету">
-                <div class="avatar-side">
+            <div class="profile-main-header" id="jumpToNode" title="Картадан көру">
+                <div class="p-avatar-box">
                     <img id="p-photo" src="" alt="" style="display:none;">
-                    <div id="p-avatar-placeholder" class="profile-avatar"></div>
+                    <div id="p-avatar-placeholder" class="empty-avatar"></div>
                 </div>
-                <div class="info-side">
+                <div class="p-info-box">
                     <div class="p-patronymic" id="p-patronymic"></div>
                     <h2 class="p-name" id="p-full-name"></h2>
-                    <div class="p-details">
-                        <div id="p-birth"></div>
-                        <div id="p-death"></div>
+                    <div class="p-meta">
+                        <span id="p-birth"></span>
+                        <span id="p-death"></span>
                         <a id="p-phone-link" href="" class="p-phone"></a>
                     </div>
                 </div>
             </div>
 
-            <div class="profile-body">
-                <div class="lineage-section">
+            <div class="profile-scroll-area">
+                <div class="lineage-block">
                     <h4>Аталар (Предки)</h4>
-                    <div id="p-ancestors" class="lineage-list-horizontal"></div>
+                    <div id="p-ancestors" class="p-pills-row"></div>
                 </div>
-                <div class="lineage-section">
+                <div class="lineage-block">
                     <h4>Ұрпақтар (Потомки)</h4>
-                    <div id="p-descendants" class="lineage-list-horizontal"></div>
+                    <div id="p-descendants" class="p-pills-row"></div>
                 </div>
             </div>
         </div>
