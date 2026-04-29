@@ -13,7 +13,8 @@ d3.csv(SHEET_URL).then(data => {
         birth: d.birth || "",
         death: d.death || "",
         phone: d.phone || "",
-        fatherId: (d.father_id && d.father_id !== "0") ? String(d.father_id) : null
+        // Если id человека 1, у него нет отца по определению
+        fatherId: (d.id === "1" || !d.father_id || d.father_id === "0") ? null : String(d.father_id)
     }));
     init();
 });
@@ -26,7 +27,7 @@ function init() {
     g = svg.append("g");
     
     zoomObj = d3.zoom()
-        .scaleExtent([0.05, 3])
+        .scaleExtent([0.02, 3])
         .on("zoom", (e) => g.attr("transform", e.transform));
     
     svg.call(zoomObj);
@@ -49,39 +50,50 @@ function render() {
 
     if (currentView === 'force') {
         simulation = d3.forceSimulation(globalData)
-            .force("link", d3.forceLink(linksData).id(d => d.id).distance(160))
-            .force("charge", d3.forceManyBody().strength(-1200))
+            .force("link", d3.forceLink(linksData).id(d => d.id).distance(180))
+            .force("charge", d3.forceManyBody().strength(-1500))
             .force("center", d3.forceCenter(window.innerWidth / 2, window.innerHeight / 2))
-            .force("collision", d3.forceCollide().radius(80))
+            .force("collision", d3.forceCollide().radius(100))
             .on("tick", ticked);
             
         drawGraph(globalData, linksData);
     } else {
         // Режим Дерева (Иерархия)
-        const stratify = d3.stratify().id(d => d.id).parentId(d => d.fatherId);
-        const root = stratify(globalData);
-        
-        // Настройка размера дерева: ширина между узлами и высота между уровнями
-        const treeLayout = d3.tree().nodeSize([200, 250]);
-        treeLayout(root);
+        try {
+            const stratify = d3.stratify()
+                .id(d => d.id)
+                .parentId(d => d.fatherId);
+            
+            const root = stratify(globalData);
+            
+            // Расчет дерева: горизонтальный шаг 250, вертикальный 300
+            const treeLayout = d3.tree().nodeSize([250, 300]);
+            treeLayout(root);
 
-        const nodes = root.descendants().map(d => {
-            // Центрируем дерево: x + половина экрана, y + отступ сверху
-            d.x = d.x + window.innerWidth / 2;
-            d.y = d.y + 150;
-            return Object.assign(d.data, { x: d.x, y: d.y });
-        });
+            const nodes = root.descendants().map(d => {
+                // Смещение всей структуры для центрирования
+                d.xPos = d.x + window.innerWidth / 2;
+                d.yPos = d.y + 150;
+                return Object.assign(d.data, { x: d.xPos, y: d.yPos });
+            });
 
-        const links = root.links().map(l => ({
-            source: { id: l.source.id, x: l.source.x, y: l.source.y },
-            target: { id: l.target.id, x: l.target.x, y: l.target.y }
-        }));
+            const links = root.links().map(l => ({
+                source: { id: l.source.id, x: l.source.xPos, y: l.source.yPos },
+                target: { id: l.target.id, x: l.target.xPos, y: l.target.yPos }
+            }));
 
-        drawGraph(nodes, links);
-        ticked(); // Отрисовка позиций сразу
-        
-        // Авто-фокус на корень при переключении
-        svg.transition().duration(750).call(zoomObj.transform, d3.zoomIdentity.translate(0, 0).scale(0.8));
+            drawGraph(nodes, links);
+            ticked(); 
+
+            // Плавный зум на вершину (id: 1)
+            svg.transition().duration(1000).call(
+                zoomObj.transform, 
+                d3.zoomIdentity.translate(window.innerWidth/2 - nodes.find(n=>n.id==="1").x, 50).scale(0.7)
+            );
+        } catch (err) {
+            console.error("Ошибка построения иерархии:", err);
+            alert("Ошибка в данных таблицы: убедитесь, что у всех (кроме ID 1) правильно указан ID отца.");
+        }
     }
 }
 
@@ -89,36 +101,57 @@ function drawGraph(nodes, links) {
     const linkContainer = g.append("g").attr("class", "links-layer");
     const nodeContainer = g.append("g").attr("class", "nodes-layer");
 
-    const link = linkContainer.selectAll("line").data(links).enter().append("line")
+    const link = linkContainer.selectAll(".tree-link").data(links).enter().append("path")
         .attr("class", "tree-link")
-        .attr("id", d => `l-${(d.source.id || d.source)}-${(d.target.id || d.target)}`);
+        .attr("id", d => `l-${(d.source.id || d.source)}-${(d.target.id || d.target)}`)
+        .attr("fill", "none");
 
     const node = nodeContainer.selectAll(".node-group").data(nodes).enter().append("g")
         .attr("class", "node-group")
         .attr("id", d => `node-${d.id}`)
+        .style("cursor", "pointer")
         .on("click", (e, d) => openProfile(d))
         .call(currentView === 'force' ? d3.drag().on("start", dragStart).on("drag", dragging).on("end", dragEnd) : () => {});
 
-    node.append("circle").attr("r", 40).attr("class", "node-base");
-    node.append("clipPath").attr("id", d => `cp-${d.id}`).append("circle").attr("r", 37);
+    node.append("circle").attr("r", 45).attr("class", "node-base");
+    node.append("clipPath").attr("id", d => `cp-${d.id}`).append("circle").attr("r", 42);
 
     node.append("image")
         .attr("xlink:href", d => d.photo || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png")
-        .attr("x", -37).attr("y", -37).attr("width", 74).attr("height", 74)
+        .attr("x", -42).attr("y", -42).attr("width", 84).attr("height", 84)
         .attr("clip-path", d => `url(#cp-${d.id})`).attr("preserveAspectRatio", "xMidYMid slice");
 
-    node.append("text").attr("dy", 65).attr("text-anchor", "middle").attr("class", "node-label").text(d => d.name);
+    node.append("text")
+        .attr("dy", 75)
+        .attr("text-anchor", "middle")
+        .attr("class", "node-label")
+        .text(d => d.name);
 
     if(activeNodeId) applyHighlight(activeNodeId);
 }
 
 function ticked() {
-    g.selectAll(".tree-link")
-        .attr("x1", d => d.source.x).attr("y1", d => d.source.y)
-        .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+    if (currentView === 'force') {
+        g.selectAll(".tree-link")
+            .attr("d", d => `M${d.source.x},${d.source.y} L${d.target.x},${d.target.y}`);
+    } else {
+        // Красивые кривые линии для дерева
+        g.selectAll(".tree-link")
+            .attr("d", d => {
+                return `M${d.source.x},${d.source.y} 
+                        C${d.source.x},${(d.source.y + d.target.y) / 2} 
+                         ${d.target.x},${(d.source.y + d.target.y) / 2} 
+                         ${d.target.x},${d.target.y}`;
+            });
+    }
+    
     g.selectAll(".node-group")
         .attr("transform", d => `translate(${d.x},${d.y})`);
 }
+
+// Остальные функции (applyHighlight, openProfile, updatePills, setupInterface, drag) 
+// остаются без изменений из вашего исходного кода, так как они работают корректно.
+// (Для экономии места здесь не дублирую, просто вставьте их из вашего старого файла)
 
 function applyHighlight(id) {
     g.selectAll(".node-base").classed("status-selected", false).classed("status-related", false);
@@ -126,7 +159,6 @@ function applyHighlight(id) {
 
     g.select(`#node-${id} .node-base`).classed("status-selected", true);
 
-    // Подсветка ПРЕДКОВ (вверх до упора)
     let pathId = id;
     while(pathId) {
         let nodeData = globalData.find(n => n.id === pathId);
@@ -138,7 +170,6 @@ function applyHighlight(id) {
         } else pathId = null;
     }
 
-    // Подсветка ПОТОМКОВ (один уровень вниз)
     globalData.filter(n => n.fatherId === id).forEach(child => {
         g.select(`#node-${child.id} .node-base`).classed("status-related", true);
         g.select(`#l-${id}-${child.id}`).classed("link-active", true);
