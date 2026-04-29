@@ -9,13 +9,12 @@ let highlightedLinks = new Set();
 
 d3.csv(SHEET_URL).then(rawData => {
     globalData = rawData.map(d => ({
-        id: Number(d.id),
+        id: String(d.id), // Приводим к строке для стабильности d3.stratify
         name: d.name,
         photo: d.photo || "",
         birth: d.birth || "—",
-        death: d.death || null,
         phone: d.phone || "—",
-        fatherId: d.father_id && d.father_id !== "" ? Number(d.father_id) : null
+        fatherId: (d.father_id && d.father_id !== "" && d.father_id !== "0") ? String(d.father_id) : null
     }));
     renderGraph();
     setupSearch();
@@ -62,8 +61,9 @@ function runForceLayout(data, links) {
 
 function runTreeLayout(data, links) {
     try {
-        const rootNode = data.find(d => d.fatherId === null);
-        if (!rootNode) throw new Error("Root not found");
+        // Ищем корень: элемент без отца или с ID "1"
+        const rootCandidate = data.find(d => d.fatherId === null || d.id === "1");
+        if (!rootCandidate) throw new Error("Root not found");
 
         const stratify = d3.stratify().id(d => d.id).parentId(d => d.fatherId);
         const root = stratify(data);
@@ -76,7 +76,6 @@ function runTreeLayout(data, links) {
         treeNodes.forEach(d => {
             d.x_pos = d.y + 100; 
             d.y_pos = d.x + (window.innerHeight / 2);
-            // Синхронизируем для d3.drag и highlight
             d.x = d.x_pos; d.y = d.y_pos;
         });
 
@@ -88,8 +87,8 @@ function runTreeLayout(data, links) {
         
         updatePositions();
     } catch (e) {
-        console.error(e);
-        alert("Режим дерева қатесі: Ортақ ата табылмады.");
+        console.error("Tree Error:", e);
+        alert("Режим дерева қатесі: Ортақ ата (id: 1) табылмады.");
         currentView = 'force';
         renderGraph();
     }
@@ -106,7 +105,6 @@ function drawGraphElements(nodes, links) {
         .call(d3.drag().on("start", dragStart).on("drag", dragging).on("end", dragEnd));
 
     node.append("circle").attr("r", 30).attr("fill", "#fff").attr("stroke", "#0071e3").attr("stroke-width", 2);
-
     node.append("clipPath").attr("id", d => `clip-${d.id}`).append("circle").attr("r", 28);
 
     node.append("image")
@@ -139,35 +137,37 @@ function showProfile(person) {
     } else { img.style.display = 'none'; placeholder.style.display = 'block'; }
 
     renderLineageLists(person);
-    
-    // При клике на имя в профиле - переходим к нему на карте
-    document.querySelector('.info-side').onclick = () => {
-        modal.classList.remove('active');
-        highlightFullLineage(person.id);
-        const width = window.innerWidth, height = window.innerHeight;
-        svg.transition().duration(1000).call(
-            d3.zoom().transform, 
-            d3.zoomIdentity.translate(width/2 - person.x * 1.5, height/2 - person.y * 1.5).scale(1.5)
-        );
-    };
-
     modal.classList.add('active');
 }
 
-function highlightFullLineage(targetId) {
-    highlightedNodes.clear(); highlightedLinks.clear();
-    const findAnc = (id) => {
-        highlightedNodes.add(id);
-        const p = globalData.find(x => x.id === id);
-        if (p && p.fatherId) { highlightedLinks.add(`${p.fatherId}-${id}`); findAnc(p.fatherId); }
-    };
-    const findChild = (id) => {
-        globalData.filter(x => x.fatherId === id).forEach(c => {
-            highlightedNodes.add(c.id); highlightedLinks.add(`${id}-${c.id}`);
-        });
-    };
-    findAnc(targetId); findChild(targetId);
-    applyPersistentHighlight();
+function renderLineageLists(person) {
+    const ancCont = document.getElementById('p-ancestors');
+    const ancestors = [];
+    let curr = person;
+    while(curr && curr.fatherId) {
+        curr = globalData.find(p => p.id === curr.fatherId);
+        if(curr) ancestors.push(curr);
+    }
+    
+    ancCont.innerHTML = ancestors.length ? "" : "<p>Түп ата</p>";
+    ancestors.reverse().forEach(anc => {
+        const div = document.createElement('div');
+        div.className = 'lineage-item-pill';
+        div.innerText = anc.name;
+        div.onclick = () => showProfile(anc);
+        ancCont.appendChild(div);
+    });
+
+    const children = globalData.filter(p => p.fatherId === person.id);
+    const descCont = document.getElementById('p-descendants');
+    descCont.innerHTML = children.length ? "" : "<p>Ұрпақтар жоқ</p>";
+    children.forEach(child => {
+        const div = document.createElement('div');
+        div.className = 'lineage-item-pill';
+        div.innerText = child.name;
+        div.onclick = () => showProfile(child);
+        descCont.appendChild(div);
+    });
 }
 
 function applyPersistentHighlight() {
@@ -175,8 +175,7 @@ function applyPersistentHighlight() {
         .attr("stroke-width", d => highlightedNodes.has(d.id) ? 6 : 2);
     g.selectAll(".link")
         .attr("stroke", d => highlightedLinks.has(`${d.source.id || d.source}-${d.target.id || d.target}`) ? "#28a745" : "#d2d2d7")
-        .attr("stroke-width", d => highlightedLinks.has(`${d.source.id || d.source}-${d.target.id || d.target}`) ? 4 : 2)
-        .attr("marker-end", d => highlightedLinks.has(`${d.source.id || d.source}-${d.target.id || d.target}`) ? "url(#arrowhead-active)" : "url(#arrowhead)");
+        .attr("stroke-width", d => highlightedLinks.has(`${d.source.id || d.source}-${d.target.id || d.target}`) ? 4 : 2);
 }
 
 function setupSearch() {
@@ -186,15 +185,13 @@ function setupSearch() {
         const val = this.value.toLowerCase();
         results.innerHTML = "";
         if (val.length < 2) { results.classList.remove('active'); return; }
-        
         const matches = globalData.filter(p => p.name.toLowerCase().includes(val));
         if (matches.length > 0) {
             results.classList.add('active');
             matches.forEach(p => {
-                const father = globalData.find(f => f.id === p.fatherId);
                 const div = document.createElement('div');
                 div.className = 'search-item';
-                div.innerHTML = `<strong>${p.name}</strong><small>${father ? father.name + ' ұлы' : 'Ата'} | ${p.birth}</small>`;
+                div.innerHTML = `<strong>${p.name}</strong><small>${p.birth}</small>`;
                 div.onclick = () => { showProfile(p); results.classList.remove('active'); input.value = ""; };
                 results.appendChild(div);
             });
@@ -211,32 +208,3 @@ function dragStart(e) { if (!e.active && simulation) simulation.alphaTarget(0.3)
 function dragging(e) { e.subject.fx = e.x; e.subject.fy = e.y; }
 function dragEnd(e) { if (!e.active && simulation) simulation.alphaTarget(0); e.subject.fx = null; e.subject.fy = null; }
 document.querySelector('.close-modal').onclick = () => document.getElementById('profileModal').classList.remove('active');
-
-function renderLineageLists(person) {
-    const ancCont = document.getElementById('p-ancestors');
-    const ancestors = [];
-    let curr = person;
-    while(curr && curr.fatherId) {
-        curr = globalData.find(p => p.id === curr.fatherId);
-        if(curr) ancestors.push(curr);
-    }
-    ancCont.innerHTML = ancestors.length ? "" : "<p>Түп ата</p>";
-    ancestors.reverse().forEach(anc => {
-        const div = document.createElement('div');
-        div.className = 'lineage-item';
-        div.innerText = `↑ ${anc.name}`;
-        div.onclick = (e) => { e.stopPropagation(); showProfile(anc); };
-        ancCont.appendChild(div);
-    });
-
-    const children = globalData.filter(p => p.fatherId === person.id);
-    const descCont = document.getElementById('p-descendants');
-    descCont.innerHTML = children.length ? "" : "<p>Ұрпақтар жоқ</p>";
-    children.forEach(child => {
-        const div = document.createElement('div');
-        div.className = 'lineage-item';
-        div.innerText = `↳ ${child.name}`;
-        div.onclick = (e) => { e.stopPropagation(); showProfile(child); };
-        descCont.appendChild(div);
-    });
-}
