@@ -24,16 +24,12 @@
 
             <div class="nav-controls">
                 <div class="search-wrapper">
-                    <input type="text" id="memberSearch" placeholder="Іздеу..." autocomplete="off">
+                    <input type="text" id="memberSearch" placeholder="Есімді іздеу..." autocomplete="off">
                     <div id="searchResults" class="search-dropdown"></div>
                 </div>
                 <button id="viewFilter" class="filter-btn" title="Көріністі өзгерту">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="16 3 21 3 21 8"></polyline>
-                        <line x1="4" y1="20" x2="21" y2="3"></line>
-                        <polyline points="21 16 21 21 16 21"></polyline>
-                        <line x1="15" y1="15" x2="21" y2="21"></line>
-                        <line x1="4" y1="4" x2="9" y2="9"></line>
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                     </svg>
                 </button>
             </div>
@@ -43,10 +39,10 @@
     <div id="canvas-container">
         <svg id="treeCanvas">
             <defs>
-                <marker id="arrowhead" viewBox="0 -5 10 10" refX="28" refY="0" markerWidth="6" markerHeight="6" orient="auto">
+                <marker id="arrowhead" viewBox="0 -5 10 10" refX="32" refY="0" markerWidth="6" markerHeight="6" orient="auto">
                     <path d="M0,-5L10,0L0,5" fill="#d2d2d7"></path>
                 </marker>
-                <marker id="arrowhead-active" viewBox="0 -5 10 10" refX="28" refY="0" markerWidth="6" markerHeight="6" orient="auto">
+                <marker id="arrowhead-active" viewBox="0 -5 10 10" refX="32" refY="0" markerWidth="6" markerHeight="6" orient="auto">
                     <path d="M0,-5L10,0L0,5" fill="#28a745"></path>
                 </marker>
             </defs>
@@ -54,34 +50,34 @@
     </div>
 
     <div id="profileModal" class="modal-overlay">
-		<div class="modal-content glass">
-			<button class="close-modal">&times;</button>
-			<div class="profile-header-new">
-				<div class="avatar-side">
-					<img id="p-photo" src="" alt="" style="display:none;">
-					<div id="p-avatar-placeholder" class="profile-avatar"></div>
-				</div>
-				<div class="info-side">
-					<h2 id="p-full-name"></h2>
-					<div class="p-dates-row">
-						<span id="p-birth"></span>
-						<span id="p-death" style="display:none;"></span>
-					</div>
-					<a id="p-phone-link" href="" class="phone-link"></a>
-				</div>
-			</div>
-			<div class="profile-body">
-				<div class="lineage-section">
-					<h4>Линия предков (Аталар)</h4>
-					<div id="p-ancestors" class="lineage-list"></div>
-				</div>
-				<div class="lineage-section">
-					<h4>Потомки (Ұрпақтар)</h4>
-					<div id="p-descendants" class="lineage-list"></div>
-				</div>
-			</div>
-		</div>
-	</div>
+        <div class="modal-content glass">
+            <button class="close-modal">&times;</button>
+            <div class="profile-header-new">
+                <div class="avatar-side">
+                    <img id="p-photo" src="" alt="" style="display:none;">
+                    <div id="p-avatar-placeholder" class="profile-avatar"></div>
+                </div>
+                <div class="info-side">
+                    <h2 id="p-full-name"></h2>
+                    <div class="p-dates-row">
+                        <span id="p-birth"></span>
+                        <span id="p-death" style="display:none;"></span>
+                    </div>
+                    <a id="p-phone-link" href="" class="phone-link"></a>
+                </div>
+            </div>
+            <div class="profile-body">
+                <div class="lineage-section">
+                    <h4>Аталар (Предки)</h4>
+                    <div id="p-ancestors" class="lineage-list"></div>
+                </div>
+                <div class="lineage-section">
+                    <h4>Ұрпақтар (Потомки)</h4>
+                    <div id="p-descendants" class="lineage-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="script.js"></script>
 </body>

@@ -95,8 +95,29 @@ body {
     display: none; max-height: 300px; overflow-y: auto;
 }
 .search-dropdown.active { display: block; }
-.search-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; }
+.search-item {
+    padding: 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.search-item strong { color: var(--accent); font-size: 14px; }
+.search-item small { color: #666; font-size: 11px; }
 .search-item:hover { background: #f0f7ff; }
+
+.node circle { cursor: pointer; transition: stroke-width 0.3s; }
+.node text { pointer-events: none; text-shadow: 0 2px 4px rgba(255,255,255,0.8); }
+
+.info-side { cursor: pointer; padding: 10px; border-radius: 12px; transition: 0.2s; }
+.info-side:hover { background: rgba(0,113,227,0.05); }
+
+.profile-avatar {
+    width: 90px; height: 90px; border-radius: 50%;
+    background: #eee url('https://cdn-icons-png.flaticon.com/512/3135/3135715.png') no-repeat center;
+    background-size: 40%; border: 3px solid var(--accent);
+}
 
 /* Адаптив */
 @media (max-width: 768px) {
